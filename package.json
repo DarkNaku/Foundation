@@ -1,0 +1,14 @@
+{
+  "name": "com.darknaku.foundation",
+  "displayName": "Foundation",
+  "version": "1.0.0",
+  "unity" : "2018.3",
+  "author" : "DarkNaku",
+  "description" : "DarkNaku's Game Foundation Package",
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DarkNaku/Foundation.git"
+  }
+}
