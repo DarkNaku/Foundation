@@ -25,7 +25,7 @@ namespace DarkNaku.Foundation
         public static bool Contains(string key) => Instance._pools.ContainsKey(key);
         public static void Register(string key, GameObject mold) => Instance._Register(key, mold);
         public static void Unregister(string key) => Instance._Unregister(key);
-        public static T Get<T>(string key, Transform parent = null) where T : GOItem => Instance._Get<T>(key, parent);
+        public static T Get<T>(string key, Transform parent = null) where T : Component => Instance._Get<T>(key, parent);
         public static GameObject Get(string key, Transform parent = null) => Instance._Get(key, parent);
         public static void Release(GameObject go, bool immediately = false) => Instance._Release(go, immediately);
         public static void Release(GOItem item, bool immediately = false) => Instance._Release(item, immediately);
@@ -46,7 +46,7 @@ namespace DarkNaku.Foundation
             _pools.Remove(key);
         }
 
-        private T _Get<T>(string key, Transform parent) where T : GOItem
+        private T _Get<T>(string key, Transform parent) where T : Component 
         {
             var item = _Get(key, parent);
 
