@@ -25,7 +25,7 @@ namespace DarkNaku.Foundation
                             _instance = (new GameObject()).AddComponent<T>();
                         }
 
-                        _instance.name = string.Format("[{0}]", typeof(T).ToString().ToUpper());
+                        _instance.name = string.Format("[{0}]", typeof(T).Name.ToString().ToUpper());
 
                         (_instance as SingletonBehaviour<T>).OnInstantiate();
                     }

@@ -16,7 +16,7 @@ namespace DarkNaku.Foundation
             {
                 if (string.IsNullOrEmpty(_assetName))
                 {
-                    _assetName = typeof(T).ToString();
+                    _assetName = typeof(T).Name.ToString();
                 }
 
                 return _assetName;
