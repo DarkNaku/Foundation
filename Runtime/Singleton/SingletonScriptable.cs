@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -16,7 +17,7 @@ namespace DarkNaku.Foundation
             {
                 if (string.IsNullOrEmpty(_assetName))
                 {
-                    _assetName = typeof(T).Name.ToString();
+                    _assetName = typeof(T).ToString();
                 }
 
                 return _assetName;
@@ -35,22 +36,24 @@ namespace DarkNaku.Foundation
                     if (_instance == null)
                     {
                         _instance = CreateInstance<T>();
-                        (_instance as SingletonScriptable<T>).OnInstantiate();
+                        (_instance as SingletonScriptable<T>).OnCreateAsset();
 #if UNITY_EDITOR
-						string resourcePath = System.IO.Path.Combine(Application.dataPath, RESOURCES_PATH);
+                        string resourcePath = System.IO.Path.Combine(Application.dataPath, RESOURCES_PATH);
 
-						if (System.IO.Directory.Exists(resourcePath) == false) {
-							AssetDatabase.CreateFolder("Assets", RESOURCES_PATH);
-						}
+                        if (System.IO.Directory.Exists(resourcePath) == false)
+                        {
+                            AssetDatabase.CreateFolder("Assets", RESOURCES_PATH);
+                        }
 
-						string fullPath = System.IO.Path.Combine(System.IO.Path.Combine("Assets", RESOURCES_PATH), AssetName + ".asset");
-						AssetDatabase.CreateAsset(_instance, fullPath);
+                        string fullPath = System.IO.Path.Combine(System.IO.Path.Combine("Assets", RESOURCES_PATH), AssetName + ".asset");
+                        AssetDatabase.CreateAsset(_instance, fullPath);
 #endif
                     }
 
                     if (Application.isPlaying)
                     {
-                        (_instance as SingletonScriptable<T>).OnLoaded();
+                        (_instance as SingletonScriptable<T>).OnInstantiate();
+                        Application.quitting += () => _instance = null;
                     }
                 }
 
@@ -58,11 +61,11 @@ namespace DarkNaku.Foundation
             }
         }
 
-        protected virtual void OnInstantiate()
+        protected virtual void OnCreateAsset()
         {
         }
 
-        protected virtual void OnLoaded()
+        protected virtual void OnInstantiate()
         {
         }
     }

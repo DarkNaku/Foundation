@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 namespace DarkNaku.Foundation
 {
     public abstract class SingletonBehaviour<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static object _lock = new object();
-        private static bool _isDestroyed = false;
 
         private static T _instance = null;
         public static T Instance
@@ -14,8 +14,6 @@ namespace DarkNaku.Foundation
             {
                 lock (_lock)
                 {
-                    if (_isDestroyed) return null;
-
                     if (_instance == null)
                     {
                         _instance = FindObjectOfType<T>();
@@ -25,9 +23,10 @@ namespace DarkNaku.Foundation
                             _instance = (new GameObject()).AddComponent<T>();
                         }
 
-                        _instance.name = string.Format("[{0}]", typeof(T).Name.ToString().ToUpper());
+                        _instance.name = string.Format("[{0}]", typeof(T).ToString().ToUpper());
 
                         (_instance as SingletonBehaviour<T>).OnInstantiate();
+                        Application.quitting += () => _instance = null;
                     }
 
                     return _instance;
@@ -35,9 +34,9 @@ namespace DarkNaku.Foundation
             }
         }
 
-        protected void OnDestroy()
+        private void OnDestroy()
         {
-            _isDestroyed = true;
+            _instance = null;
         }
 
         protected virtual void OnInstantiate()
