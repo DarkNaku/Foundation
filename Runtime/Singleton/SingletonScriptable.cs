@@ -7,6 +7,8 @@ namespace DarkNaku.Foundation
 {
     public abstract class SingletonScriptable<T> : ScriptableObject where T : ScriptableObject
     {
+        protected virtual string AssetPath { get; } = RESOURCES_PATH;
+        
         private const string RESOURCES_PATH = "Resources";
 
         private static string _assetName;
@@ -38,22 +40,16 @@ namespace DarkNaku.Foundation
 
                         (_instance as SingletonScriptable<T>).OnCreateInstance();
 #if UNITY_EDITOR
-                        string resourcePath = System.IO.Path.Combine(Application.dataPath, RESOURCES_PATH);
+                        var assetPath = (_instance as SingletonScriptable<T>).AssetPath;
+                        var resourcePath = System.IO.Path.Combine(Application.dataPath, assetPath);
 
                         if (System.IO.Directory.Exists(resourcePath) == false)
                         {
-                            AssetDatabase.CreateFolder("Assets", RESOURCES_PATH);
+                            AssetDatabase.CreateFolder("Assets", assetPath);
                         }
 
-                        string fullPath = System.IO.Path.Combine(System.IO.Path.Combine("Assets", RESOURCES_PATH), AssetName + ".asset");
-
-                        AssetDatabase.CreateAsset(_instance, fullPath);
+                        AssetDatabase.CreateAsset(_instance, $"Assets/{assetPath}/{AssetName}.asset");
 #endif
-                    }
-
-                    if (Application.isPlaying)
-                    {
-                        (_instance as SingletonScriptable<T>).OnInstantiate();
                     }
                 }
 
@@ -62,10 +58,6 @@ namespace DarkNaku.Foundation
         }
 
         protected virtual void OnCreateInstance()
-        {
-        }
-
-        protected virtual void OnInstantiate()
         {
         }
     }

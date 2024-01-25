@@ -2,32 +2,84 @@ using UnityEngine;
 
 namespace DarkNaku.Foundation
 {
-    public abstract class SingletonBehaviour<T> : MonoBehaviour where T : MonoBehaviour
+    public abstract class SingletonBehaviour : MonoBehaviour
     {
         [SerializeField] private bool _isPersistent = true;
 
+        protected static bool IsQuitting { get; private set; }
+
+        protected virtual void Awake()
+        {
+            if (_isPersistent)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+
+            OnAwake();
+        }
+
+        protected virtual void OnDestroy()
+        {
+            IsQuitting = true;
+            
+            OnFireDestroy();
+        }
+
+        protected virtual void OnApplicationQuit()
+        {
+            IsQuitting = true;
+            
+            OnFireApplicationQuit();
+        }
+
+        protected virtual void OnInstantiate()
+        {
+        }
+
+        protected virtual void OnAwake()
+        {
+        }
+
+        protected virtual void OnFireDestroy()
+        {
+        }
+
+        protected virtual void OnFireApplicationQuit()
+        {
+        }
+    }
+    
+    public abstract class SingletonBehaviour<T> : SingletonBehaviour where T : MonoBehaviour
+    {
         private static readonly object _lock = new();
         private static T _instance;
-        private static bool _isQuitting;
 
         public static T Instance
         {
             get
             {
-                if (_isQuitting) return null;
+                if (IsQuitting) return null;
 
                 lock (_lock)
                 {
                     if (_instance == null)
                     {
-                        _instance = FindObjectOfType<T>();
+                        var instances = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-                        if (_instance == null)
+                        if (instances.Length > 0)
                         {
-                            _instance = new GameObject().AddComponent<T>();
-                        }
+                            _instance = instances[0];
 
-                        _instance.name = string.Format("[Singleton {0}]", typeof(T).ToString());
+                            for (int i = 1; i < instances.Length; i++)
+                            {
+                                Debug.LogWarningFormat("[SingletonBehaviour] Instance Duplicated - {0}", instances[i].name);
+                                Destroy(instances[i]);
+                            }
+                        }
+                        else
+                        {
+                            _instance = new GameObject($"[Singleton - {typeof(T)}]").AddComponent<T>();
+                        }
 
                         (_instance as SingletonBehaviour<T>).OnInstantiate();
                     }
@@ -37,7 +89,7 @@ namespace DarkNaku.Foundation
             }
         }
 
-        private void Awake()
+        protected sealed override void Awake()
         {
             if (_instance == null)
             {
@@ -45,33 +97,22 @@ namespace DarkNaku.Foundation
             }
             else if (_instance != this)
             {
-                Destroy(this.gameObject);
+                Debug.LogWarningFormat("[SingletonBehaviour] Duplicated - {0}", typeof(T).Name);
+                Destroy(gameObject);
+                return;
             }
 
-            if (_isPersistent)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-
-            OnAwake();
+            base.Awake();
+        }
+        
+        protected sealed override void OnDestroy()
+        {
+            base.OnDestroy();
         }
 
-        private void OnDestroy()
+        protected sealed override void OnApplicationQuit()
         {
-            _isQuitting = true;
-        }
-
-        private void OnApplicationQuit()
-        {
-            _isQuitting = true;
-        }
-
-        protected virtual void OnInstantiate()
-        {
-        }
-
-        protected virtual void OnAwake()
-        {
+            base.OnApplicationQuit();
         }
     }
 }

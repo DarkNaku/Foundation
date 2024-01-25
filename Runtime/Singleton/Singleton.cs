@@ -25,7 +25,7 @@ namespace DarkNaku.Foundation
                 return _instance;
             }
         }
-
+        
         protected virtual void OnInstantiate()
         {
         }
