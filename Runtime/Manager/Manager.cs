@@ -12,22 +12,25 @@ namespace DarkNaku.Foundation
         public bool Initialized { get; private set; }
 
         private bool _isInitializing;
+        private Manager _parent;
 
-        public async Task Initialize(Manager parent = null)
+        public void Initialize(Manager parent = null)
         {
             if (Initialized) return;
 
             _isInitializing = true;
 
+            _parent = parent;
+
             for (int i = 0; i < _managers.Count; i++)
             {
                 if (_managers[i].Initialized == false)
                 {
-                    await _managers[i].Initialize(this);
+                    _managers[i].Initialize(this);
                 }
             }
 
-            await OnInitialize();
+            OnInitialize();
 
             _isInitializing = false;
 
@@ -35,12 +38,45 @@ namespace DarkNaku.Foundation
 
             for (int i = 0; i < _managers.Count; i++)
             {
-                await _managers[i].OnStart();
+                _managers[i].OnStart();
             }
 
-            if (parent == null)
+            if (_parent == null)
             {
-                await OnStart();
+                OnStart();
+            }
+        }
+
+        public async Task InitializeAsync(Manager parent = null)
+        {
+            if (Initialized) return;
+
+            _isInitializing = true;
+
+            _parent = parent;
+
+            for (int i = 0; i < _managers.Count; i++)
+            {
+                if (_managers[i].Initialized == false)
+                {
+                    await _managers[i].InitializeAsync(this);
+                }
+            }
+
+            await OnInitializeAsync();
+
+            _isInitializing = false;
+
+            Initialized = true;
+
+            for (int i = 0; i < _managers.Count; i++)
+            {
+                await _managers[i].OnStartAsync();
+            }
+
+            if (_parent == null)
+            {
+                await OnStartAsync();
             }
         }
 
@@ -87,12 +123,22 @@ namespace DarkNaku.Foundation
             return null;
         }
 
-        protected virtual async Task OnInitialize()
+        protected virtual void OnInitialize()
         {
         }
 
-        protected virtual async Task OnStart()
+        protected virtual async Task OnInitializeAsync()
         {
+            await Task.Yield();
+        }
+
+        protected virtual void OnStart()
+        {
+        }
+
+        protected virtual async Task OnStartAsync()
+        {
+            await Task.Yield();
         }
 
         protected virtual void OnUninitialize()
