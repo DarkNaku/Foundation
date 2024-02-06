@@ -6,7 +6,7 @@ using UnityEngine.Events;
 namespace DarkNaku.Stat
 {
     [Serializable]
-    public class Stat
+    public class Stat<T>
     {
         public delegate float CalculateMethod(IReadOnlyDictionary<ModifierType, IReadOnlyList<Modifier>> modifiers);
 
@@ -48,9 +48,9 @@ namespace DarkNaku.Stat
             }
         }
 
-        public string Name { get; }
+        public T Key { get; }
 
-        public UnityEvent<Stat> OnChangeValue { get; } = new();
+        public UnityEvent<Stat<T>> OnChangeValue { get; } = new();
         public CalculateMethod CustomCalculateMethod { get; set; }
 
         [SerializeField] private float _initialValue;
@@ -74,11 +74,11 @@ namespace DarkNaku.Stat
             };
         }
 
-        public Stat(float initialValue, string name = "") : this()
+        public Stat(float initialValue, T key = default) : this()
         {
             _initialValue = initialValue;
             _baseValue = _initialValue;
-            Name = name;
+            Key = key;
         }
 
         public void AddModifier(Modifier modifier)
@@ -102,6 +102,24 @@ namespace DarkNaku.Stat
                     _isDirty = true;
                     OnChangeValue.Invoke(this);
                 }
+            }
+        }
+
+        public void RemoveModifiersFromID(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+
+            int numberRemoved = 0;
+
+            foreach (var modifiers in _modifiers.Values)
+            {
+                numberRemoved += modifiers.RemoveAll(item => item.ID == id);
+            }
+
+            if (numberRemoved > 0)
+            {
+                _isDirty = true;
+                OnChangeValue.Invoke(this);
             }
         }
 

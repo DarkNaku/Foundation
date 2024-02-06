@@ -4,15 +4,15 @@ using UnityEngine;
 
 namespace DarkNaku.Stat
 {
-    public class ModifierInfo
+    public class ModifierInfo<T>
     {
-        public string StatName { get; }
+        public T Key { get; }
         public ModifierType Type { get; }
         public float Value { get; }
 
-        public ModifierInfo(string statName, ModifierType modifierType, float value)
+        public ModifierInfo(T key, ModifierType modifierType, float value)
         {
-            StatName = statName;
+            Key = key;
             Type = modifierType;
             Value = value;
         }

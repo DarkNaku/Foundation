@@ -5,25 +5,25 @@ using UnityEngine.Events;
 namespace DarkNaku.Stat
 {
     [System.Serializable]
-    public partial class CharacterStats
+    public partial class CharacterStats<T>
     {
-        public IReadOnlyDictionary<string, Stat> All => _stats;
+        public IReadOnlyDictionary<T, Stat<T>> All => _stats;
         
-        public UnityEvent<CharacterStats, Stat> OnChangeStat { get; } = new();
+        public UnityEvent<CharacterStats<T>, Stat<T>> OnChangeStat { get; } = new();
 
-        private Dictionary<string, Stat> _stats;
+        private Dictionary<T, Stat<T>> _stats;
         
-        public Stat this[string statName]
+        public Stat<T> this[T key]
         {
             get
             {
-                if (_stats.ContainsKey(statName))
+                if (_stats.ContainsKey(key))
                 {
-                    return _stats[statName];
+                    return _stats[key];
                 }
                 else
                 {
-                    Debug.LogErrorFormat("[CharacterStats] Can't found stat - {0}", statName);
+                    Debug.LogErrorFormat("[CharacterStats] Can't found stat - {0}", key);
                     return null;
                 }
             }
@@ -31,48 +31,56 @@ namespace DarkNaku.Stat
 
         public CharacterStats()
         {
-            _stats = new Dictionary<string, Stat>();
+            _stats = new Dictionary<T, Stat<T>>();
         }
 
-        public bool Contains(string statName) => _stats.ContainsKey(statName);
+        public bool Contains(T key) => _stats.ContainsKey(key);
 
-        public void Add(string statName, float initialValue)
+        public void Add(T key, float initialValue)
         {
-            if (_stats.ContainsKey(statName))
+            if (_stats.ContainsKey(key))
             {
-                Debug.LogErrorFormat("[CharacterStats] Add : Already added - {0}", statName);
+                Debug.LogErrorFormat("[CharacterStats] Add : Already added - {0}", key);
             }
             else
             {
-                var stat = new Stat(initialValue, statName);
+                var stat = new Stat<T>(initialValue, key);
 
                 stat.OnChangeValue.AddListener(OnChangeValue);
 
-                _stats.Add(statName, stat);
+                _stats.Add(key, stat);
             }
         }
 
-        public void AddModifier(string statName, Modifier modifier)
+        public void AddModifier(T key, Modifier modifier)
         {
-            if (_stats.ContainsKey(statName))
+            if (_stats.ContainsKey(key))
             {
-                _stats[statName].AddModifier(modifier);
+                _stats[key].AddModifier(modifier);
             }
             else
             {
-                Debug.LogErrorFormat("[CharacterStats] AddModifier : Can't found stat - {0}", statName);
+                Debug.LogErrorFormat("[CharacterStats] AddModifier : Can't found stat - {0}", key);
             }
         }
 
-        public void RemoveModifier(string statName, Modifier modifier)
+        public void RemoveModifier(T key, Modifier modifier)
         {
-            if (_stats.ContainsKey(statName))
+            if (_stats.ContainsKey(key))
             {
-                _stats[statName].RemoveModifier(modifier);
+                _stats[key].RemoveModifier(modifier);
             }
             else
             {
-                Debug.LogErrorFormat("[CharacterStats] RemoveModifier : Can't found stat - {0}", statName);
+                Debug.LogErrorFormat("[CharacterStats] RemoveModifier : Can't found stat - {0}", key);
+            }
+        }
+        
+        public void RemoveModifierFromID(string id)
+        {
+            foreach (var stat in _stats.Values)
+            {
+                stat.RemoveModifiersFromID(id);
             }
         }
         
@@ -90,13 +98,13 @@ namespace DarkNaku.Stat
             
             foreach (var stat in _stats.Values)
             {
-                info += $"\n{stat.Name} = Value : {stat.Value}, Value Without Temporary : {stat.PermanentValue}";
+                info += $"\n{stat.Key} = Value : {stat.Value}, Value Without Temporary : {stat.PermanentValue}";
             }
             
             Debug.Log(info);
         }
 
-        private void OnChangeValue(Stat stat)
+        private void OnChangeValue(Stat<T> stat)
         {
             OnChangeStat.Invoke(this, stat);
         }

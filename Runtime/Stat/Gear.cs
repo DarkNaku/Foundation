@@ -1,15 +1,13 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace DarkNaku.Stat
 {
-    public class Gear
+    public class Gear<T>
     {
-        private readonly HashSet<ModifierInfo> _modifierInfos;
-        private CharacterStats _characterStats;
+        private readonly HashSet<ModifierInfo<T>> _modifierInfos;
+        private CharacterStats<T> _characterStats;
 
-        public Gear(params ModifierInfo[] modifierInfos)
+        public Gear(params ModifierInfo<T>[] modifierInfos)
         {
             if (modifierInfos == null) return;
 
@@ -21,7 +19,7 @@ namespace DarkNaku.Stat
             }
         }
 
-        public void Equip(CharacterStats characterStats)
+        public void Equip(CharacterStats<T> characterStats)
         {
             Unequip();
             
@@ -29,10 +27,9 @@ namespace DarkNaku.Stat
 
             foreach (var info in _modifierInfos)
             {
-                if (string.IsNullOrEmpty(info.StatName)) continue;
-                if (_characterStats.All.ContainsKey(info.StatName) == false) continue;
+                if (_characterStats.All.ContainsKey(info.Key) == false) continue;
 
-                characterStats.AddModifier(info.StatName, new Modifier(info.Type, info.Value, false, this));
+                characterStats.AddModifier(info.Key, new Modifier(info.Type, info.Value, false, this));
             }
         }
 
