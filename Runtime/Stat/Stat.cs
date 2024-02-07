@@ -5,7 +5,6 @@ using UnityEngine.Events;
 
 namespace DarkNaku.Stat
 {
-    [Serializable]
     public class Stat<T>
     {
         public delegate float CalculateMethod(IReadOnlyDictionary<ModifierType, IReadOnlyList<Modifier>> modifiers);
@@ -53,8 +52,8 @@ namespace DarkNaku.Stat
         public UnityEvent<Stat<T>> OnChangeValue { get; } = new();
         public CalculateMethod CustomCalculateMethod { get; set; }
 
-        [SerializeField] private float _initialValue;
-        [SerializeField] private float _baseValue;
+        private float _initialValue;
+        private float _baseValue;
 
         private bool _isDirty = true;
         private bool _isDirtyPermanent = true;

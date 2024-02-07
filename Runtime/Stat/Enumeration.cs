@@ -1,13 +1,19 @@
 using System;
+using UnityEngine;
+using Object = System.Object;
 
 namespace DarkNaku.Stat
 {
+    [Serializable]
     public abstract class Enumeration : Object, IComparable
     {
-        public string Name { get; private set; }
-        public int Id { get; private set; }
+        [SerializeField] private string _name;
+        [SerializeField] private int _id;
 
-        protected Enumeration(int id, string name) => (Id, Name) = (id, name);
+        public string Name => _name;
+        public int ID => _id;
+
+        protected Enumeration(int id, string name) => (_id, _name) = (id, name);
 
         public override string ToString() => Name;
 
@@ -19,13 +25,13 @@ namespace DarkNaku.Stat
             }
 
             var typeMatches = GetType().Equals(obj.GetType());
-            var valueMatches = Id.Equals(otherValue.Id);
+            var valueMatches = ID.Equals(otherValue.ID);
 
             return typeMatches && valueMatches;
         }
 
-        public override int GetHashCode() => Id.GetHashCode();
+        public override int GetHashCode() => ID.GetHashCode();
 
-        public int CompareTo(object other) => Id.CompareTo(((Enumeration)other).Id);
+        public int CompareTo(object other) => ID.CompareTo(((Enumeration)other).ID);
     }
 }
