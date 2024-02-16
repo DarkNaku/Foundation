@@ -1,32 +1,32 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using DarkNaku.Foundation.Extension;
 
 namespace DarkNaku.Foundation
 {
     public abstract class Manager : MonoBehaviour
     {
-        [SerializeField] private List<Manager> _managers;
-
         public bool Initialized { get; private set; }
 
         private bool _isInitializing;
-        private Manager _parent;
+        private HashSet<Manager> _managers;
 
-        public void Initialize(Manager parent = null)
+        public virtual void Initialize(Manager parent = null)
         {
             if (Initialized) return;
 
             _isInitializing = true;
+            
+            FindAllManagerInChildren();
 
-            _parent = parent;
-
-            for (int i = 0; i < _managers.Count; i++)
+            foreach (var manager in _managers)
             {
-                if (_managers[i].Initialized == false)
+                if (manager.Initialized == false)
                 {
-                    _managers[i].Initialize(this);
+                    manager.Initialize(this);
                 }
             }
 
@@ -36,30 +36,30 @@ namespace DarkNaku.Foundation
 
             Initialized = true;
 
-            for (int i = 0; i < _managers.Count; i++)
+            foreach (var manager in _managers)
             {
-                _managers[i].OnStart();
+                manager.OnStart();
             }
 
-            if (_parent == null)
+            if (parent == null)
             {
                 OnStart();
             }
         }
-
-        public async Task InitializeAsync(Manager parent = null)
+        
+        public virtual async Task InitializeAsync(Manager parent = null)
         {
             if (Initialized) return;
 
             _isInitializing = true;
+            
+            FindAllManagerInChildren();
 
-            _parent = parent;
-
-            for (int i = 0; i < _managers.Count; i++)
+            foreach (var manager in _managers)
             {
-                if (_managers[i].Initialized == false)
+                if (manager.Initialized == false)
                 {
-                    await _managers[i].InitializeAsync(this);
+                    await manager.InitializeAsync(this);
                 }
             }
 
@@ -69,24 +69,24 @@ namespace DarkNaku.Foundation
 
             Initialized = true;
 
-            for (int i = 0; i < _managers.Count; i++)
+            foreach (var manager in _managers)
             {
-                await _managers[i].OnStartAsync();
+                await manager.OnStartAsync();
             }
 
-            if (_parent == null)
+            if (parent == null)
             {
                 await OnStartAsync();
             }
         }
 
-        public void Uninitialize()
+        public virtual void Uninitialize()
         {
             if (Initialized == false) return;
 
-            for (int i = 0; i < _managers.Count; i++)
+            foreach (var manager in _managers)
             {
-                _managers[i].Uninitialize();
+                manager.Uninitialize();
             }
 
             OnUninitialize();
@@ -109,13 +109,13 @@ namespace DarkNaku.Foundation
             }
             else
             {
-                for (int i = 0; i < _managers.Count; i++)
+                foreach (var manager in _managers)
                 {
-                    var manager = _managers[i].Get<T>();
+                    var found = manager.Get<T>();
 
-                    if (manager != null)
+                    if (found != null)
                     {
-                        return manager;
+                        return found;
                     }
                 }
             }
@@ -127,22 +127,85 @@ namespace DarkNaku.Foundation
         {
         }
 
-        protected virtual async Task OnInitializeAsync()
-        {
-            await Task.Yield();
-        }
-
         protected virtual void OnStart()
         {
         }
 
+        protected virtual async Task OnInitializeAsync()
+        {
+            await Task.Delay(0);
+        }
+
         protected virtual async Task OnStartAsync()
         {
-            await Task.Yield();
+            await Task.Delay(0);
         }
 
         protected virtual void OnUninitialize()
         {
+        }
+        
+        private void FindAllManagerInChildren()
+        {
+            _managers = new();
+            
+            transform.ForEachChild((child) =>
+            {
+                var manager = child.GetComponent<Manager>();
+
+                if (manager == null) return;
+                if (_managers.Contains(manager)) return;
+                
+                manager.FindAllManagerInChildren();
+                
+                _managers.Add(manager);
+            });
+        }
+    }
+    
+    public abstract class Manager<T> : Manager where T : class
+    {
+        public static T Instance => _instance;
+        
+        private static T _instance;
+
+        public sealed override void Initialize(Manager parent = null)
+        {
+            if (Initialized) return;
+
+            if (_instance == null)
+            {
+                _instance = this as T;
+            }
+            else if (_instance.Equals(this) == false)
+            {
+                Destroy(gameObject);
+            }
+            
+            base.Initialize(parent);
+        }
+
+        public sealed override async Task InitializeAsync(Manager parent = null)
+        {
+            if (Initialized) return;
+
+            if (_instance == null)
+            {
+                _instance = this as T;
+            }
+            else if (_instance.Equals(this) == false)
+            {
+                Destroy(gameObject);
+            }
+            
+            await base.InitializeAsync(parent);
+        }
+
+        public sealed override void Uninitialize()
+        {
+            base.Uninitialize();
+
+            _instance = null;
         }
     }
 }

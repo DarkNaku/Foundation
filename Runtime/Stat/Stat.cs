@@ -7,7 +7,7 @@ namespace DarkNaku.Stat
 {
     public class Stat<T>
     {
-        public delegate float CalculateMethod(IReadOnlyDictionary<ModifierType, IReadOnlyList<Modifier>> modifiers);
+        public delegate float CalculateMethod(IReadOnlyDictionary<ModifierType, IReadOnlyList<Modifier>> modifiers, bool withTemporary);
 
         public float InitialValue => _initialValue;
 
@@ -161,7 +161,7 @@ namespace DarkNaku.Stat
                     modifiers.Add(item.Key, item.Value);
                 }
 
-                return CustomCalculateMethod(modifiers);
+                return CustomCalculateMethod(modifiers, withTemporary);
             }
         }
 
