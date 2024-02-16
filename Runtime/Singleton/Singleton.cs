@@ -3,7 +3,7 @@ namespace DarkNaku.Foundation
     public abstract class Singleton<T> where T : class, new()
     {
         private static object _lock = new();
-        private static T _instance;
+        protected static T _instance;
 
         public static T Instance
         {

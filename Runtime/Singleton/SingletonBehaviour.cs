@@ -52,7 +52,7 @@ namespace DarkNaku.Foundation
     public abstract class SingletonBehaviour<T> : SingletonBehaviour where T : MonoBehaviour
     {
         private static readonly object _lock = new();
-        private static T _instance;
+        protected static T _instance;
 
         public static T Instance
         {
