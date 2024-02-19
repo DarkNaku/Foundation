@@ -11,20 +11,6 @@ namespace DarkNaku.Foundation
         
         private const string RESOURCES_PATH = "Resources";
 
-        private static string _assetName;
-        private static string AssetName
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(_assetName))
-                {
-                    _assetName = typeof(T).ToString();
-                }
-
-                return _assetName;
-            }
-        }
-
         private static T _instance;
         public static T Instance
         {
@@ -32,13 +18,14 @@ namespace DarkNaku.Foundation
             {
                 if (_instance == null)
                 {
-                    _instance = Resources.Load(AssetName) as T;
+                    var assetName = typeof(T).Name;
+
+                    _instance = Resources.Load(assetName) as T;
 
                     if (_instance == null)
                     {
                         _instance = CreateInstance<T>();
 
-                        (_instance as SingletonScriptable<T>).OnCreateInstance();
 #if UNITY_EDITOR
                         var assetPath = (_instance as SingletonScriptable<T>).AssetPath;
                         var resourcePath = System.IO.Path.Combine(Application.dataPath, assetPath);
@@ -48,16 +35,18 @@ namespace DarkNaku.Foundation
                             AssetDatabase.CreateFolder("Assets", assetPath);
                         }
 
-                        AssetDatabase.CreateAsset(_instance, $"Assets/{assetPath}/{AssetName}.asset");
+                        AssetDatabase.CreateAsset(_instance, $"Assets/{assetPath}/{assetName}.asset");
 #endif
                     }
+
+                    if (Application.isPlaying) (_instance as SingletonScriptable<T>).OnInitialize();
                 }
 
                 return _instance;
             }
         }
 
-        protected virtual void OnCreateInstance()
+        protected virtual void OnInitialize()
         {
         }
     }
