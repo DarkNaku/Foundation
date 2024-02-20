@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -13,8 +12,34 @@ namespace DarkNaku.Stat
 
         public float BaseValue 
         { 
-            get => _baseValue;
-            set => _baseValue = value;
+            get => _parent?.Value ?? _baseValue;
+            set
+            {
+                if (_parent == null)
+                {
+                    _baseValue = value;
+                }
+                else
+                {
+                    Debug.LogError("[Stat] Can't set base value to child stat.");
+                }
+            }
+        }
+
+        public float PermanentBaseValue
+        {
+            get => _parent?.PermanentValue ?? _baseValue;
+            set
+            {
+                if (_parent == null)
+                {
+                    _baseValue = value;
+                }
+                else
+                {
+                    Debug.LogError("[Stat] Can't set base value to child stat.");
+                }
+            }
         }
 
         public float Value
@@ -36,9 +61,9 @@ namespace DarkNaku.Stat
         {
             get
             {
-                if (_isDirtyPermanent || _lastBaseValue != BaseValue)
+                if (_isDirtyPermanent || _lastPermanentBaseValue != PermanentBaseValue)
                 {
-                    _lastBaseValue = BaseValue;
+                    _lastPermanentBaseValue = PermanentBaseValue;
                     _permanentValue = CalculateFinalValue(false);
                     _isDirtyPermanent = false;
                 }
@@ -47,17 +72,20 @@ namespace DarkNaku.Stat
             }
         }
 
-        public T Key { get; }
+        public T Key => (_parent == null) ? _key : _parent.Key;
 
         public UnityEvent<Stat<T>> OnChangeValue { get; } = new();
         public CalculateMethod CustomCalculateMethod { get; set; }
 
         private float _initialValue;
         private float _baseValue;
+        private Stat<T> _parent;
 
+        private T _key;
         private bool _isDirty = true;
         private bool _isDirtyPermanent = true;
         private float _lastBaseValue;
+        private float _lastPermanentBaseValue;
         private float _value;
         private float _permanentValue;
 
@@ -77,7 +105,13 @@ namespace DarkNaku.Stat
         {
             _initialValue = initialValue;
             _baseValue = _initialValue;
-            Key = key;
+            _key = key;
+        }
+        
+        public Stat(Stat<T> parent, T key = default) : this()
+        {
+            _parent = parent;
+            _parent.OnChangeValue.AddListener((stat) => OnChangeValue.Invoke(this));
         }
 
         public void AddModifier(Modifier modifier)
@@ -89,6 +123,12 @@ namespace DarkNaku.Stat
 
             _modifiers[modifier.Type].Add(modifier);
             _isDirty = true;
+            
+            if (modifier.IsTemporary == false)
+            {
+                _isDirtyPermanent = true;
+            }
+            
             OnChangeValue.Invoke(this);
         }
 
@@ -99,6 +139,12 @@ namespace DarkNaku.Stat
                 if (_modifiers[modifier.Type].Remove(modifier))
                 {
                     _isDirty = true;
+                    
+                    if (modifier.IsTemporary == false)
+                    {
+                        _isDirtyPermanent = true;
+                    }
+                    
                     OnChangeValue.Invoke(this);
                 }
             }
@@ -118,6 +164,7 @@ namespace DarkNaku.Stat
             if (numberRemoved > 0)
             {
                 _isDirty = true;
+                _isDirtyPermanent = true;
                 OnChangeValue.Invoke(this);
             }
         }
@@ -136,6 +183,7 @@ namespace DarkNaku.Stat
             if (numberRemoved > 0)
             {
                 _isDirty = true;
+                _isDirtyPermanent = true;
                 OnChangeValue.Invoke(this);
             }
         }

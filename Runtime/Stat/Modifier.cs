@@ -37,6 +37,6 @@ namespace DarkNaku.Stat
             ID = id;
         }
 
-        public override string ToString() => $"Type : {_type}, Value : {_value}, IsTemporary : {_isTemporary}, Source : {Source}, ID : {ID}";
+        public override string ToString() => $"Type : {_type}, Value : {_value}, IsTemporary : {_isTemporary}, Source : {nameof(Source)}, ID : {ID}";
     }
 }

@@ -11,8 +11,6 @@ namespace DarkNaku.Stat
         
         public UnityEvent<CharacterStats<T>, Stat<T>> OnChangeStat { get; } = new();
 
-        private Dictionary<T, Stat<T>> _stats;
-        
         public Stat<T> this[T key]
         {
             get
@@ -28,11 +26,29 @@ namespace DarkNaku.Stat
                 }
             }
         }
+        
+        private Dictionary<T, Stat<T>> _stats;
+        private CharacterStats<T> _parent;
 
         public CharacterStats()
         {
             _stats = new Dictionary<T, Stat<T>>();
         }
+        
+        public CharacterStats(CharacterStats<T> parent)
+        {
+            _parent = parent;
+            _stats = new Dictionary<T, Stat<T>>();
+
+            foreach (var item in _parent.All)
+            {
+                var stat = new Stat<T>(item.Value, item.Key);
+
+                stat.OnChangeValue.AddListener(OnChangeValue);
+                
+                _stats.Add(item.Key, stat);
+            }
+        } 
 
         public bool Contains(T key) => _stats.ContainsKey(key);
 
