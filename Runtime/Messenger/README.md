@@ -6,7 +6,7 @@ UniRx의 MessageBroker와 유사한 하지만 단순하게 메세지를 전달 �
 
 ## 설치
 
-https://github.com/cookapps-devops/pxp-foundation
+https://github.com/DarkNaku/Foundation
 
 
 ## 사용법
