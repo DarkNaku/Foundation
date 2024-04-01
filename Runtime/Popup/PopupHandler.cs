@@ -5,8 +5,10 @@ using UnityEngine.UI;
 
 namespace DarkNaku.Popup
 {
-    public abstract class PopupHandler : MonoBehaviour
+    public abstract class PopupHandler<T> : MonoBehaviour, IPopupHandler where T : PopupHandler<T>
     {
+        public string Name => gameObject.name;
+
         public Canvas PopupCanvas
         {
             get
@@ -31,7 +33,7 @@ namespace DarkNaku.Popup
 
         public bool IsInTransition { get; protected set; }
 
-        public bool IsOpened => gameObject.activeSelf;
+        public bool IsShow => gameObject.activeSelf;
 
         protected IPopupTransition PopupTransition { get; private set; }
         
@@ -47,23 +49,8 @@ namespace DarkNaku.Popup
 
         private Canvas _popupCanvas;
         private GraphicRaycaster _graphicRaycaster;
-        private Action<object> _onWillHide;
-        private Action<object> _onDidHide;
-
-        public Coroutine Show(object param, System.Action<object> onWillHide, System.Action<object> onDidHide)
-        {
-            return StartCoroutine(CoShow(param, onWillHide, onDidHide));
-        }
-
-        public Coroutine Hide()
-        {
-            return StartCoroutine(CoHide(null));
-        }
-
-        public Coroutine Hide(object result)
-        {
-            return StartCoroutine(CoHide(result));
-        }
+        private Action<T> _onWillHide;
+        private Action<T> _onDidHide;
 
         public void Initialize()
         {
@@ -75,8 +62,27 @@ namespace DarkNaku.Popup
             
             PopupCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             PopupTransition = GetComponent<IPopupTransition>();
+            gameObject.SetActive(false);
             
             OnInitialize();
+        }
+
+        public IEnumerator Show()
+        {
+            yield return null;
+
+            gameObject.SetActive(true);
+
+            yield return CoShow();
+        }
+
+        public IEnumerator Hide()
+        {
+            yield return null;
+
+            yield return CoHide();
+
+            gameObject.SetActive(false);
         }
 
         public virtual void OnEscape()
@@ -84,27 +90,41 @@ namespace DarkNaku.Popup
             Popup.Hide(this);
         }
 
+        public T OnWillHide(Action<T> callback)
+        {
+            _onWillHide = callback;
+
+            return this as T;
+        }
+
+        public T OnDidHide(Action<T> callback)
+        {
+            _onDidHide = callback;
+
+            return this as T;
+        }
+
         protected virtual void OnInitialize()
         {
         }
 
-        protected virtual void OnWillEnter(object param)
+        protected virtual void OnWillShow()
         {
         }
 
-        protected virtual void OnDidEnter(object param)
+        protected virtual void OnDidShow()
         {
         }
 
-        protected virtual void OnWillLeave()
+        protected virtual void OnWillHide()
         {
         }
 
-        protected virtual void OnDidLeave()
+        protected virtual void OnDidHide()
         {
         }
 
-        private IEnumerator CoShow(object param, System.Action<object> onWillHide, System.Action<object> onDidHide)
+        private IEnumerator CoShow()
         {
             if (IsInTransition)
             {
@@ -114,24 +134,21 @@ namespace DarkNaku.Popup
 
             IsInTransition = true;
 
-            _onWillHide = onWillHide;
-            _onDidHide = onDidHide;
-
-            OnWillEnter(param);
+            OnWillShow();
 
             if (PopupTransition != null)
             {
-                yield return StartCoroutine(PopupTransition.CoTransitionIn(this));
+                yield return PopupTransition.CoTransitionIn();
             }
 
-            OnDidEnter(param);
+            OnDidShow();
 
             Interactable = true;
 
             IsInTransition = false;
         }
 
-        private IEnumerator CoHide(object result)
+        private IEnumerator CoHide()
         {
             if (IsInTransition)
             {
@@ -143,19 +160,19 @@ namespace DarkNaku.Popup
 
             Interactable = false;
 
-            OnWillLeave();
+            OnWillHide();
 
-            _onWillHide?.Invoke(result);
+            _onWillHide?.Invoke(this as T);
             _onWillHide = null;
 
             if (PopupTransition != null)
             {
-                yield return StartCoroutine(PopupTransition.CoTransitionOut(this));
+                yield return PopupTransition.CoTransitionOut();
             }
 
-            OnDidLeave();
+            OnDidHide();
 
-            _onDidHide?.Invoke(result);
+            _onDidHide?.Invoke(this as T);
             _onDidHide = null;
 
             IsInTransition = false;

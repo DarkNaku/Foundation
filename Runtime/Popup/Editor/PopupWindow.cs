@@ -4,9 +4,9 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using DarkNaku.Popup;
 using UnityEngine.UI;
 
+/*
 namespace DarkNaku.Popup
 {
     public class PopupWindow : EditorWindow
@@ -131,3 +131,4 @@ public class ##CLASS_NAME## : PopupHandler
         }
     }
 }
+*/
