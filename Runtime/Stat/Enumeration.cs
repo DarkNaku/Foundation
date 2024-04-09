@@ -10,8 +10,8 @@ namespace DarkNaku.Stat
         [SerializeField] private string _name;
         [SerializeField] private int _id;
 
-        public string Name => _name;
         public int ID => _id;
+        public string Name => _name;
 
         protected Enumeration(int id, string name) => (_id, _name) = (id, name);
 
@@ -24,8 +24,8 @@ namespace DarkNaku.Stat
                 return false;
             }
 
-            var typeMatches = GetType().Equals(obj.GetType());
             var valueMatches = ID.Equals(otherValue.ID);
+            var typeMatches = GetType().Equals(obj.GetType());
 
             return typeMatches && valueMatches;
         }

@@ -8,10 +8,10 @@ namespace DarkNaku.Stat.Smith
         IReadOnlyList<T1> GetPartTable();
         IReadOnlyList<T2> GetGradeTable();
         IReadOnlyList<float> GetProbabilityTable();
-        List<KeyAndModifier<T3>> GetDefaultModifiers(T1 part, T2 grade, int level);
-        List<KeyAndModifier<T3>> GetExtraModifiers(T1 part, T2 grade, int level);
+        List<KeyAndValue<T3>> GetDefaultModifiers(T1 part, T2 grade, int level);
+        List<KeyAndValue<T3>> GetExtraModifiers(T1 part, T2 grade, int level);
 
         EquipmentBase<T1, T2, T3> CreateEquipment(T1 part, T2 grade, int level,
-            List<KeyAndModifier<T3>> defaultModifiers, List<KeyAndModifier<T3>> extraModifiers);
+            List<KeyAndValue<T3>> defaultModifiers, List<KeyAndValue<T3>> extraModifiers);
     }
 }

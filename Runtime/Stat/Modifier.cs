@@ -4,18 +4,6 @@ using UnityEngine;
 namespace DarkNaku.Stat
 {
     [Serializable]
-    public partial class ModifierType : Enumeration
-    {
-        public static ModifierType Sum = new(1, nameof(Sum));
-        public static ModifierType PercentAdd = new(2, nameof(PercentAdd));
-        public static ModifierType PercentMultiply = new(3, nameof(PercentMultiply));
-
-        public ModifierType(int id, string name) : base(id, name)
-        {
-        }
-    }
-
-    [Serializable]
     public class Modifier
     {
         [SerializeField] private ModifierType _type;

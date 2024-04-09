@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -13,22 +14,6 @@ namespace DarkNaku.Stat
         public float BaseValue 
         { 
             get => _parent?.Value ?? _baseValue;
-            set
-            {
-                if (_parent == null)
-                {
-                    _baseValue = value;
-                }
-                else
-                {
-                    Debug.LogError("[Stat] Can't set base value to child stat.");
-                }
-            }
-        }
-
-        public float PermanentBaseValue
-        {
-            get => _parent?.PermanentValue ?? _baseValue;
             set
             {
                 if (_parent == null)
@@ -61,9 +46,9 @@ namespace DarkNaku.Stat
         {
             get
             {
-                if (_isDirtyPermanent || _lastPermanentBaseValue != PermanentBaseValue)
+                if (_isDirtyPermanent || _lastBaseValue != BaseValue)
                 {
-                    _lastPermanentBaseValue = PermanentBaseValue;
+                    _lastBaseValue = BaseValue;
                     _permanentValue = CalculateFinalValue(false);
                     _isDirtyPermanent = false;
                 }
@@ -75,6 +60,7 @@ namespace DarkNaku.Stat
         public T Key => (_parent == null) ? _key : _parent.Key;
 
         public UnityEvent<Stat<T>> OnChangeValue { get; } = new();
+        public UnityEvent<Stat<T>> OnChangeValuePermanent { get; } = new();
         public CalculateMethod CustomCalculateMethod { get; set; }
 
         private float _initialValue;
@@ -96,8 +82,8 @@ namespace DarkNaku.Stat
             _modifiers = new Dictionary<ModifierType, List<Modifier>>
             {
                 { ModifierType.Sum, new List<Modifier>() },
-                { ModifierType.PercentAdd, new List<Modifier>() },
-                { ModifierType.PercentMultiply, new List<Modifier>() }
+                { ModifierType.Percent, new List<Modifier>() },
+                { ModifierType.Multiply, new List<Modifier>() }
             };
         }
 
@@ -111,7 +97,18 @@ namespace DarkNaku.Stat
         public Stat(Stat<T> parent, T key = default) : this()
         {
             _parent = parent;
-            _parent.OnChangeValue.AddListener((stat) => OnChangeValue.Invoke(this));
+            
+            _parent.OnChangeValue.AddListener((stat) =>
+            {
+                _isDirty = true;
+                OnChangeValue.Invoke(this);
+            });
+            
+            _parent.OnChangeValuePermanent.AddListener((stat) =>
+            {
+                _isDirtyPermanent = true;
+                OnChangeValuePermanent.Invoke(this);
+            });
         }
 
         public void AddModifier(Modifier modifier)
@@ -124,12 +121,13 @@ namespace DarkNaku.Stat
             _modifiers[modifier.Type].Add(modifier);
             _isDirty = true;
             
+            OnChangeValue.Invoke(this);
+            
             if (modifier.IsTemporary == false)
             {
                 _isDirtyPermanent = true;
+                OnChangeValuePermanent.Invoke(this);
             }
-            
-            OnChangeValue.Invoke(this);
         }
 
         public void RemoveModifier(Modifier modifier)
@@ -140,12 +138,13 @@ namespace DarkNaku.Stat
                 {
                     _isDirty = true;
                     
+                    OnChangeValue.Invoke(this);
+                    
                     if (modifier.IsTemporary == false)
                     {
                         _isDirtyPermanent = true;
+                        OnChangeValuePermanent.Invoke(this);
                     }
-                    
-                    OnChangeValue.Invoke(this);
                 }
             }
         }
@@ -155,17 +154,35 @@ namespace DarkNaku.Stat
             if (string.IsNullOrEmpty(id)) return;
 
             int numberRemoved = 0;
-
+            var permanentModifierRemoved = false;
+            
             foreach (var modifiers in _modifiers.Values)
             {
-                numberRemoved += modifiers.RemoveAll(item => item.ID == id);
+                for (int i = modifiers.Count - 1; i >= 0; i--)
+                {
+                    if (modifiers[i].ID == id)
+                    {
+                        if (modifiers[i].IsTemporary == false)
+                        {
+                            _isDirtyPermanent = true;
+                            permanentModifierRemoved = true;
+                        }
+                        
+                        modifiers.RemoveAt(i);
+                        numberRemoved++;
+                    }
+                }
             }
 
             if (numberRemoved > 0)
             {
                 _isDirty = true;
-                _isDirtyPermanent = true;
                 OnChangeValue.Invoke(this);
+
+                if (permanentModifierRemoved)
+                {
+                    OnChangeValuePermanent.Invoke(this);
+                }
             }
         }
 
@@ -174,18 +191,62 @@ namespace DarkNaku.Stat
             if (source == null) return;
 
             int numberRemoved = 0;
+            var permanentModifierRemoved = false;
 
             foreach (var modifiers in _modifiers.Values)
             {
-                numberRemoved += modifiers.RemoveAll(item => item.Source == source);
+                for (int i = modifiers.Count - 1; i >= 0; i--)
+                {
+                    if (modifiers[i].Source == source)
+                    {
+                        if (modifiers[i].IsTemporary == false)
+                        {
+                            _isDirtyPermanent = true;
+                            permanentModifierRemoved = true;
+                        }
+                        
+                        modifiers.RemoveAt(i);
+                        numberRemoved++;
+                    }
+                }
             }
 
             if (numberRemoved > 0)
             {
                 _isDirty = true;
-                _isDirtyPermanent = true;
+                OnChangeValue.Invoke(this);
+
+                if (permanentModifierRemoved)
+                {
+                    OnChangeValuePermanent.Invoke(this);
+                }
+            }
+        }
+        
+        public void RemoveTemporaryModifiers()
+        {
+            int numberRemoved = 0;
+
+            foreach (var modifiers in _modifiers.Values)
+            {
+                numberRemoved += modifiers.RemoveAll(item => item.IsTemporary);
+            }
+
+            if (numberRemoved > 0)
+            {
+                _isDirty = true;
                 OnChangeValue.Invoke(this);
             }
+        }
+        
+        public IReadOnlyList<Modifier> GetModifiers(ModifierType modifierType)
+        {
+            if (_modifiers.TryGetValue(modifierType, out var modifiers))
+            {
+                return modifiers;
+            }
+
+            return Enumerable.Empty<Modifier>().ToList();
         }
 
         protected virtual float CalculateFinalValue(bool withTemporary)
@@ -200,20 +261,18 @@ namespace DarkNaku.Stat
 
                 return finalValue;
             }
-            else
+
+            var modifiers = new Dictionary<ModifierType, IReadOnlyList<Modifier>>();
+
+            foreach (var item in _modifiers)
             {
-                var modifiers = new Dictionary<ModifierType, IReadOnlyList<Modifier>>();
-
-                foreach (var item in _modifiers)
-                {
-                    modifiers.Add(item.Key, item.Value);
-                }
-
-                return CustomCalculateMethod(modifiers, withTemporary);
+                modifiers.Add(item.Key, item.Value);
             }
+
+            return CustomCalculateMethod(modifiers, withTemporary);
         }
 
-        protected float CalculatePlus(float baseValue, bool withTemporary)
+        private float CalculatePlus(float baseValue, bool withTemporary)
         {
             var modifiers = _modifiers[ModifierType.Sum];
 
@@ -235,9 +294,9 @@ namespace DarkNaku.Stat
             return baseValue;
         }
 
-        protected float CalculatePercentAdd(float baseValue, bool withTemporary)
+        private float CalculatePercentAdd(float baseValue, bool withTemporary)
         {
-            var modifiers = _modifiers[ModifierType.PercentAdd];
+            var modifiers = _modifiers[ModifierType.Percent];
 
             float percentAddSum = 0f;
 
@@ -259,9 +318,9 @@ namespace DarkNaku.Stat
             return baseValue * (1f + percentAddSum);
         }
 
-        protected float CalculatePercentMultiply(float baseValue, bool withTemporary)
+        private float CalculatePercentMultiply(float baseValue, bool withTemporary)
         {
-            var modifiers = _modifiers[ModifierType.PercentMultiply];
+            var modifiers = _modifiers[ModifierType.Multiply];
 
             for (int i = 0; i < modifiers.Count; i++)
             {

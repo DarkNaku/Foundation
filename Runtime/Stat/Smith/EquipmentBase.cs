@@ -11,20 +11,20 @@ namespace DarkNaku.Stat.Smith
         [SerializeField] private T1 _part;
         [SerializeField] private T2 _grade;
         [SerializeField] private int _level;
-        [SerializeField] private List<KeyAndModifier<T3>> _defaultModifiers;
-        [SerializeField] private List<KeyAndModifier<T3>> _extraModifiers;
+        [SerializeField] private List<KeyAndValue<T3>> _defaultModifiers;
+        [SerializeField] private List<KeyAndValue<T3>> _extraModifiers;
 
         public T1 Part => _part;
         public T2 Grade => _grade;
         public int Level => _level;
-        public IReadOnlyList<KeyAndModifier<T3>> DefaultModifiers => _defaultModifiers;
-        public IReadOnlyList<KeyAndModifier<T3>> ExtraModifiers => _extraModifiers;
+        public IReadOnlyList<KeyAndValue<T3>> DefaultModifiers => _defaultModifiers;
+        public IReadOnlyList<KeyAndValue<T3>> ExtraModifiers => _extraModifiers;
 
-        public EquipmentBase(T1 part, T2 grade, int level, List<KeyAndModifier<T3>> defaultModifiers,
-            List<KeyAndModifier<T3>> extraModifiers)
+        public EquipmentBase(T1 part, T2 grade, int level, List<KeyAndValue<T3>> defaultModifiers,
+            List<KeyAndValue<T3>> extraModifiers)
         {
-            defaultModifiers ??= Enumerable.Empty<KeyAndModifier<T3>>().ToList();
-            extraModifiers ??= Enumerable.Empty<KeyAndModifier<T3>>().ToList();
+            defaultModifiers ??= Enumerable.Empty<KeyAndValue<T3>>().ToList();
+            extraModifiers ??= Enumerable.Empty<KeyAndValue<T3>>().ToList();
 
             _part = part;
             _grade = grade;
