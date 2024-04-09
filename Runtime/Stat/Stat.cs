@@ -5,10 +5,18 @@ using UnityEngine.Events;
 
 namespace DarkNaku.Stat
 {
-    public class Stat<T>
+    public interface IStat
     {
-        public delegate float CalculateMethod(IReadOnlyDictionary<ModifierType, IReadOnlyList<Modifier>> modifiers, bool withTemporary);
-
+        float InitialValue { get; }
+        float BaseValue { get; set; }
+        float Value { get; }    
+        float PermanentValue { get; }
+        string Name { get; }
+        IReadOnlyList<Modifier> GetModifiers(ModifierType modifierType);
+    }
+    
+    public class Stat<T> : IStat
+    {
         public float InitialValue => _initialValue;
 
         public float BaseValue 
@@ -57,11 +65,12 @@ namespace DarkNaku.Stat
             }
         }
 
+        public string Name => Key.ToString();
+
         public T Key => (_parent == null) ? _key : _parent.Key;
 
         public UnityEvent<Stat<T>> OnChangeValue { get; } = new();
         public UnityEvent<Stat<T>> OnChangeValuePermanent { get; } = new();
-        public CalculateMethod CustomCalculateMethod { get; set; }
 
         private float _initialValue;
         private float _baseValue;
@@ -81,7 +90,7 @@ namespace DarkNaku.Stat
         {
             _modifiers = new Dictionary<ModifierType, List<Modifier>>
             {
-                { ModifierType.Sum, new List<Modifier>() },
+                { ModifierType.Add, new List<Modifier>() },
                 { ModifierType.Percent, new List<Modifier>() },
                 { ModifierType.Multiply, new List<Modifier>() }
             };
@@ -249,36 +258,24 @@ namespace DarkNaku.Stat
             return Enumerable.Empty<Modifier>().ToList();
         }
 
-        protected virtual float CalculateFinalValue(bool withTemporary)
+        protected virtual float CalculateFinalValue(bool includeTemporary)
         {
-            if (CustomCalculateMethod == null) 
-            {
-                float finalValue = BaseValue;
+            float finalValue = BaseValue;
 
-                finalValue = CalculatePlus(finalValue, withTemporary);
-                finalValue = CalculatePercentAdd(finalValue, withTemporary);
-                finalValue = CalculatePercentMultiply(finalValue, withTemporary);
+            finalValue = CalculateSum(finalValue, includeTemporary);
+            finalValue = CalculatePercent(finalValue, includeTemporary);
+            finalValue = CalculateMultiply(finalValue, includeTemporary);
 
-                return finalValue;
-            }
-
-            var modifiers = new Dictionary<ModifierType, IReadOnlyList<Modifier>>();
-
-            foreach (var item in _modifiers)
-            {
-                modifiers.Add(item.Key, item.Value);
-            }
-
-            return CustomCalculateMethod(modifiers, withTemporary);
+            return finalValue;
         }
 
-        private float CalculatePlus(float baseValue, bool withTemporary)
+        protected float CalculateSum(float baseValue, bool includeTemporary)
         {
-            var modifiers = _modifiers[ModifierType.Sum];
+            var modifiers = _modifiers[ModifierType.Add];
 
             for (int i = 0; i < modifiers.Count; i++)
             {
-                if (withTemporary)
+                if (includeTemporary)
                 {
                     baseValue += modifiers[i].Value;
                 }
@@ -294,7 +291,7 @@ namespace DarkNaku.Stat
             return baseValue;
         }
 
-        private float CalculatePercentAdd(float baseValue, bool withTemporary)
+        protected float CalculatePercent(float baseValue, bool includeTemporary)
         {
             var modifiers = _modifiers[ModifierType.Percent];
 
@@ -302,7 +299,7 @@ namespace DarkNaku.Stat
 
             for (int i = 0; i < modifiers.Count; i++)
             {
-                if (withTemporary)
+                if (includeTemporary)
                 {
                     percentAddSum += modifiers[i].Value;
                 }
@@ -318,13 +315,13 @@ namespace DarkNaku.Stat
             return baseValue * (1f + percentAddSum);
         }
 
-        private float CalculatePercentMultiply(float baseValue, bool withTemporary)
+        protected float CalculateMultiply(float baseValue, bool includeTemporary)
         {
             var modifiers = _modifiers[ModifierType.Multiply];
 
             for (int i = 0; i < modifiers.Count; i++)
             {
-                if (withTemporary)
+                if (includeTemporary)
                 {
                     baseValue *= (1f + modifiers[i].Value);
                 }

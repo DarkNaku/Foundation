@@ -1,15 +1,24 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace DarkNaku.Stat
 {
-    [System.Serializable]
-    public partial class CharacterStats<T>
+    public interface ICharacterStats
     {
+        string Name { get; }
+        IReadOnlyList<IStat> Stats { get; }
+    }
+    
+    [System.Serializable]
+    public class CharacterStats<T> : ICharacterStats
+    {
+        public string Name => _name ?? _parent.Name;
+        public IReadOnlyList<IStat> Stats { get; }
         public IReadOnlyDictionary<T, Stat<T>> All => _stats;
-        
         public UnityEvent<CharacterStats<T>, Stat<T>> OnChangeStat { get; } = new();
+        public UnityEvent<CharacterStats<T>, Stat<T>> OnChangeStatPermanent { get; } = new();
 
         public Stat<T> this[T key]
         {
@@ -27,27 +36,38 @@ namespace DarkNaku.Stat
             }
         }
         
-        private Dictionary<T, Stat<T>> _stats;
+        private Dictionary<T, Stat<T>> _stats = new();
         private CharacterStats<T> _parent;
 
-        public CharacterStats()
+        private string _name;
+
+        public CharacterStats(string name)
         {
-            _stats = new Dictionary<T, Stat<T>>();
+            _name = name;
+            
+#if UNITY_EDITOR 
+            StatMonitoring.Add(this);
+#endif
         }
         
-        public CharacterStats(CharacterStats<T> parent)
+        public CharacterStats(CharacterStats<T> parent, string name)
         {
             _parent = parent;
-            _stats = new Dictionary<T, Stat<T>>();
+            _name = name;
 
             foreach (var item in _parent.All)
             {
                 var stat = new Stat<T>(item.Value, item.Key);
 
                 stat.OnChangeValue.AddListener(OnChangeValue);
+                stat.OnChangeValuePermanent.AddListener(OnChangeValuePermanent);
                 
                 _stats.Add(item.Key, stat);
             }
+            
+#if UNITY_EDITOR 
+            StatMonitoring.Add(this);
+#endif
         } 
 
         public bool Contains(T key) => _stats.ContainsKey(key);
@@ -123,6 +143,11 @@ namespace DarkNaku.Stat
         private void OnChangeValue(Stat<T> stat)
         {
             OnChangeStat.Invoke(this, stat);
+        }
+        
+        private void OnChangeValuePermanent(Stat<T> stat)
+        {
+            OnChangeStatPermanent.Invoke(this, stat);
         }
     }
 }
