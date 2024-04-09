@@ -41,3 +41,4 @@ MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
 
 [Utilities](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Utilities)
 -
+기타 유틸리티 코드 모음
