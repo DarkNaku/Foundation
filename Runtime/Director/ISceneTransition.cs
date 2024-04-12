@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DarkNaku.Foundation
+namespace DarkNaku.Director
 {
     public interface ISceneTransition
     {

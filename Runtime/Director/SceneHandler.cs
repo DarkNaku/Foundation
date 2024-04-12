@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace DarkNaku.Foundation
+namespace DarkNaku.Director
 {
     public abstract class SceneHandler : MonoBehaviour
     {
