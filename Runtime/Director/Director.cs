@@ -66,11 +66,23 @@ namespace DarkNaku.Director
             var loadingStart = Time.time;
             var progress = 0f;
 
-            while (progress < 0.9f)
+            while (progress < 1f)
             {
-                var elapsed = Time.time - loadingStart;
-                progress = MinLoadingTime > 0f ? Mathf.Min(elapsed / MinLoadingTime, ao.progress) : ao.progress;
+                if (MinLoadingTime > 0f)
+                {
+                    var elapsed = Time.time - loadingStart;
+                    var elapsedProgress = elapsed / MinLoadingTime;
+                    var sceneProgress = ao.progress / 0.9f;
+                    
+                    progress = Mathf.Min(elapsedProgress, sceneProgress);
+                }
+                else
+                {
+                    progress = ao.progress / 0.9f;
+                }
+                
                 currentLoadingProgress?.OnProgress(progress);
+                
                 yield return null;
             }
 
@@ -166,11 +178,23 @@ namespace DarkNaku.Director
             var loadingStart = Time.time;
             var progress = 0f;
 
-            while (progress < 0.9f)
+            while (progress < 1f)
             {
-                var elapsed = Time.time - loadingStart;
-                progress = MinLoadingTime > 0f ? Mathf.Min(elapsed / MinLoadingTime, ao.progress) : ao.progress;
+                if (MinLoadingTime > 0f)
+                {
+                    var elapsed = Time.time - loadingStart;
+                    var elapsedProgress = elapsed / MinLoadingTime;
+                    var sceneProgress = ao.progress / 0.9f;
+                    
+                    progress = Mathf.Min(elapsedProgress, sceneProgress);
+                }
+                else
+                {
+                    progress = ao.progress / 0.9f;
+                }
+                
                 loadingProgress?.OnProgress(progress);
+                
                 yield return null;
             }
 
