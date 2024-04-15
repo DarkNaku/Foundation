@@ -100,6 +100,8 @@ namespace DarkNaku.Director
                 Debug.LogWarningFormat("[Director] RegisterLoading : Duplicated Loading - {0}", name);
                 return;
             }
+            
+            loading.Initialize();
 
             _loadingTable.Add(name, loading);
         }
@@ -237,8 +239,6 @@ namespace DarkNaku.Director
             var nextScene = SceneManager.GetSceneByName(nextSceneName);
             var nextEventSystem = GetEventSystemInScene(nextScene);
             var nextSceneHandler = FindComponent<T>(nextScene);
-            var nextSceneLoading = FindComponent<ISceneLoading>(nextScene);
-            var nextSceneTransition = FindComponent<ISceneTransition>(nextScene);
             
             if (nextEventSystem != null)
             {
