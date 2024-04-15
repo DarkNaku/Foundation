@@ -28,7 +28,14 @@ namespace DarkNaku.Director
         {
             var currentScene = SceneManager.GetActiveScene();
             var currentSceneHandler = Instance.FindComponent<SceneHandler>(currentScene);
+            var currentSceneTransition = Instance.FindComponent<ISceneTransition>(currentScene);
             currentSceneHandler?.OnEnter();
+            Instance.StartCoroutine(currentSceneTransition.CoTransitionIn(null));
+        }
+        
+        public static void RegisterLoadingFromResource(string name, string path)
+        {
+            Instance._RegisterLoadingFromResource(name, path);
         }
         
         public static void RegisterLoading(string name, ISceneLoading loading)
@@ -89,6 +96,28 @@ namespace DarkNaku.Director
                     _loadingTable.Add(_loadings[i].name, loading);
                 }
             }
+        }
+
+        private void _RegisterLoadingFromResource(string name, string path)
+        {
+            if (_loadingTable.ContainsKey(name)) return;
+
+            var resource = Resources.Load<GameObject>(path);
+            var loadingInterface = resource?.GetComponent<ISceneLoading>();
+                
+            if (resource == null || loadingInterface == null)
+            {
+                Debug.LogWarningFormat("[Director] RegisterLoadingFromResource : Not Found Resource - {0}", name);
+                return;
+            }
+            
+            var go = Instantiate(resource);
+                
+            go.transform.SetParent(transform);
+            
+            var loading = go.GetComponent<ISceneLoading>();
+            
+            _RegisterLoading(name, loading);
         }
         
         private void _RegisterLoading(string name, ISceneLoading loading)
@@ -193,11 +222,17 @@ namespace DarkNaku.Director
             var currentScene = SceneManager.GetActiveScene();
             var currentEventSystem = GetEventSystemInScene(currentScene);
             var currentSceneHandler = FindComponent<SceneHandler>(currentScene);
+            var currentSceneTransition = FindComponent<ISceneTransition>(currentScene);
             var currentSceneName = currentScene.name;
             
             if (currentEventSystem != null)
             {
                 currentEventSystem.enabled = false;
+            }
+            
+            if (currentSceneTransition != null)
+            {
+                yield return currentSceneTransition.CoTransitionOut(nextSceneName);
             }
 
             var loading = _loadingTable[loadingName];
@@ -239,6 +274,7 @@ namespace DarkNaku.Director
             var nextScene = SceneManager.GetSceneByName(nextSceneName);
             var nextEventSystem = GetEventSystemInScene(nextScene);
             var nextSceneHandler = FindComponent<T>(nextScene);
+            var nextSceneTransition = FindComponent<ISceneTransition>(nextScene);
             
             if (nextEventSystem != null)
             {
@@ -269,6 +305,11 @@ namespace DarkNaku.Director
             if (loadingTransition != null)
             {
                 yield return loadingTransition.CoTransitionOut(currentSceneName);
+            }
+
+            if (nextSceneTransition != null)
+            {
+                yield return nextSceneTransition.CoTransitionIn(currentSceneName);
             }
             
             if (nextEventSystem != null)
