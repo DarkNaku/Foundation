@@ -14,6 +14,7 @@ public class SceneHandlerA : SceneHandler, ILoadingProgress, ISceneTransition
 
     public override void OnEnter()
     {
+        Director.MinLoadingTime = 1f;
         Debug.Log($"OnEnter : Scene A {Param}");
     }
 
@@ -79,7 +80,7 @@ public class SceneHandlerA : SceneHandler, ILoadingProgress, ISceneTransition
 
     public void OnClickChangeWithLoading()
     {
-        Director.Change<SceneHandlerB>("SceneB", "SceneLoading", (sceneHandler) =>
+        Director.Change<SceneHandlerB>("SceneB", "Loading", (sceneHandler) =>
         {
             sceneHandler.Param = "I'm From Scene A - With Loading";
         });

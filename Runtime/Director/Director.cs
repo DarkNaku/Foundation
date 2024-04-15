@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -9,9 +11,17 @@ namespace DarkNaku.Director
 {
     public class Director : SingletonBehaviour<Director>
     {
-        public float MinLoadingTime { get; set; } = 5f;
+        [SerializeField] private List<GameObject> _loadings;
+        
+        public static float MinLoadingTime
+        {
+            get => Instance._minLoadingTime;
+            set => Instance._minLoadingTime = value;
+        }
 
-        private bool _isLoading = false;
+        private bool _isLoading;
+        private float _minLoadingTime;
+        private Dictionary<string, ISceneLoading> _loadingTable;
         
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void OnAfterSceneLoad()
@@ -21,14 +31,26 @@ namespace DarkNaku.Director
             currentSceneHandler?.OnEnter();
         }
         
+        public static void RegisterLoading(string name, ISceneLoading loading)
+        {
+            Instance._RegisterLoading(name, loading);
+        }
+        
         public static void Change(string nextSceneName)
         {
             Instance.StartCoroutine(Instance.CoChange<SceneHandler>(nextSceneName, null));
         }
         
-        public static void Change(string nextSceneName, string loadingSceneName)
+        public static void Change(string nextSceneName, string loadingName)
         {
-            Instance.StartCoroutine(Instance.CoChange<SceneHandler>(nextSceneName, loadingSceneName, null));
+            if (Instance._loadingTable.ContainsKey(loadingName))
+            {
+                Instance.StartCoroutine(Instance.CoChange<SceneHandler>(nextSceneName, loadingName, null));
+            }
+            else
+            {
+                Instance.StartCoroutine(Instance.CoChange<SceneHandler>(nextSceneName, null));
+            }
         }
         
         public static void Change<T>(string nextSceneName, Action<T> onLoadScene = null) where T : SceneHandler
@@ -36,12 +58,53 @@ namespace DarkNaku.Director
             Instance.StartCoroutine(Instance.CoChange(nextSceneName, onLoadScene));
         }
 
-        public static void Change<T>(string nextSceneName, string loadingSceneName, Action<T> onLoadScene = null) where T : SceneHandler
+        public static void Change<T>(string nextSceneName, string loadingName, Action<T> onLoadScene = null) where T : SceneHandler
         {
-            Instance.StartCoroutine(Instance.CoChange(nextSceneName, loadingSceneName, onLoadScene));
+            if (Instance._loadingTable.ContainsKey(loadingName))
+            {
+                Instance.StartCoroutine(Instance.CoChange(nextSceneName, loadingName, onLoadScene));
+            }
+            else
+            {
+                Instance.StartCoroutine(Instance.CoChange(nextSceneName, onLoadScene));
+            }
         }
         
-        public IEnumerator CoChange<T>(string nextSceneName, Action<T> onLoadScene) where T : SceneHandler
+        protected override void OnAwake()
+        {
+            _loadingTable = new Dictionary<string, ISceneLoading>();
+
+            if (_loadings == null || _loadings.Count == 0) return;
+            
+            for (int i = 0; i < _loadings.Count; i++)
+            {
+                if (_loadings[i] == null) continue;
+                
+                var loading = _loadings[i].GetComponent<ISceneLoading>();
+                
+                if (loading != null)
+                {
+                    loading.Initialize();
+
+                    _loadingTable.Add(_loadings[i].name, loading);
+                }
+            }
+        }
+        
+        private void _RegisterLoading(string name, ISceneLoading loading)
+        {
+            if (loading == null) return;
+
+            if (_loadingTable.ContainsKey(name) || _loadingTable.Values.Contains(loading))
+            {
+                Debug.LogWarningFormat("[Director] RegisterLoading : Duplicated Loading - {0}", name);
+                return;
+            }
+
+            _loadingTable.Add(name, loading);
+        }
+
+        private IEnumerator CoChange<T>(string nextSceneName, Action<T> onLoadScene) where T : SceneHandler
         {
             if (_isLoading) yield break;
 
@@ -68,17 +131,11 @@ namespace DarkNaku.Director
 
             while (progress < 1f)
             {
-                if (MinLoadingTime > 0f)
+                progress = ao.progress / 0.9f;
+                
+                if (_minLoadingTime > 0f)
                 {
-                    var elapsed = Time.time - loadingStart;
-                    var elapsedProgress = elapsed / MinLoadingTime;
-                    var sceneProgress = ao.progress / 0.9f;
-                    
-                    progress = Mathf.Min(elapsedProgress, sceneProgress);
-                }
-                else
-                {
-                    progress = ao.progress / 0.9f;
+                    progress = Mathf.Min((Time.time - loadingStart) / _minLoadingTime, progress);
                 }
                 
                 currentLoadingProgress?.OnProgress(progress);
@@ -125,7 +182,7 @@ namespace DarkNaku.Director
             _isLoading = false;
         }
 
-        public IEnumerator CoChange<T>(string nextSceneName, string loadingSceneName, Action<T> onLoadScene) where T : SceneHandler
+        private IEnumerator CoChange<T>(string nextSceneName, string loadingName, Action<T> onLoadScene) where T : SceneHandler
         {
             if (_isLoading) yield break;
 
@@ -134,44 +191,23 @@ namespace DarkNaku.Director
             var currentScene = SceneManager.GetActiveScene();
             var currentEventSystem = GetEventSystemInScene(currentScene);
             var currentSceneHandler = FindComponent<SceneHandler>(currentScene);
-            var currentSceneTransition = FindComponent<ISceneTransition>(currentScene);
             var currentSceneName = currentScene.name;
-
+            
             if (currentEventSystem != null)
             {
                 currentEventSystem.enabled = false;
             }
 
-            var ao = SceneManager.LoadSceneAsync(loadingSceneName);
-
-            ao.allowSceneActivation = false;
-
-            yield return new WaitUntil(() => ao.progress >= 0.9f);
-
-            if (currentSceneTransition != null)
+            var loading = _loadingTable[loadingName];
+            var loadingTransition = loading as ISceneTransition;
+            var loadingProgress = loading as ILoadingProgress;
+            
+            if (loadingTransition != null)
             {
-                yield return currentSceneTransition.CoTransitionOut(nextSceneName);
+                yield return loadingTransition.CoTransitionIn(nextSceneName);
             }
-
-            currentSceneHandler?.OnExit();
-
-            ao.allowSceneActivation = true;
-
-            yield return new WaitUntil(() => ao.isDone);
-
-            var loadingScene = SceneManager.GetActiveScene();
-            var loadingSceneHandler = FindComponent<SceneHandler>(loadingScene);
-            var loadingSceneTransition = FindComponent<ISceneTransition>(loadingScene);
-            var loadingProgress = FindComponent<ILoadingProgress>(loadingScene);
-
-            loadingSceneHandler?.OnEnter();
-
-            if (loadingSceneTransition != null)
-            {
-                yield return loadingSceneTransition.CoTransitionIn(currentSceneName);
-            }
-
-            ao = SceneManager.LoadSceneAsync(nextSceneName);
+            
+            var ao = SceneManager.LoadSceneAsync(nextSceneName);
 
             ao.allowSceneActivation = false;
 
@@ -180,55 +216,61 @@ namespace DarkNaku.Director
 
             while (progress < 1f)
             {
-                if (MinLoadingTime > 0f)
+                progress = ao.progress / 0.9f;
+                
+                if (_minLoadingTime > 0f)
                 {
-                    var elapsed = Time.time - loadingStart;
-                    var elapsedProgress = elapsed / MinLoadingTime;
-                    var sceneProgress = ao.progress / 0.9f;
-                    
-                    progress = Mathf.Min(elapsedProgress, sceneProgress);
-                }
-                else
-                {
-                    progress = ao.progress / 0.9f;
+                    progress = Mathf.Min((Time.time - loadingStart) / (_minLoadingTime * 0.5f), progress);
                 }
                 
-                loadingProgress?.OnProgress(progress);
+                loadingProgress?.OnProgress(progress * 0.5f);
                 
                 yield return null;
             }
 
-            loadingProgress?.OnProgress(1f);
-
-            if (loadingSceneTransition != null)
-            {
-                yield return loadingSceneTransition.CoTransitionOut(nextSceneName);
-            }
-
-            loadingSceneHandler?.OnExit();
+            currentSceneHandler?.OnExit();
 
             ao.allowSceneActivation = true;
-
+            
             yield return new WaitUntil(() => ao.isDone);
-
+            
             var nextScene = SceneManager.GetSceneByName(nextSceneName);
             var nextEventSystem = GetEventSystemInScene(nextScene);
             var nextSceneHandler = FindComponent<T>(nextScene);
+            var nextSceneLoading = FindComponent<ISceneLoading>(nextScene);
             var nextSceneTransition = FindComponent<ISceneTransition>(nextScene);
-
+            
             if (nextEventSystem != null)
             {
                 nextEventSystem.enabled = false;
             }
-
+            
             onLoadScene?.Invoke(nextSceneHandler);
+            
             nextSceneHandler?.OnEnter();
+            
+            loadingStart = Time.time;
+            progress = 0f;
 
-            if (nextSceneTransition != null)
+            while (progress < 1f)
             {
-                yield return nextSceneTransition.CoTransitionIn(currentSceneName);
+                progress = Mathf.Min(1f, nextSceneHandler?.Progress ?? 1f);
+                
+                if (_minLoadingTime > 0f)
+                {
+                    progress = Mathf.Min((Time.time - loadingStart) / (_minLoadingTime * 0.5f), progress);
+                }
+                
+                loadingProgress?.OnProgress((progress * 0.5f) + 0.5f);
+                
+                yield return null;
             }
-
+            
+            if (loadingTransition != null)
+            {
+                yield return loadingTransition.CoTransitionOut(currentSceneName);
+            }
+            
             if (nextEventSystem != null)
             {
                 nextEventSystem.enabled = true;

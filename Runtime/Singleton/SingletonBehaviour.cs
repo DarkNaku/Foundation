@@ -4,13 +4,13 @@ namespace DarkNaku.Foundation
 {
     public abstract class SingletonBehaviour : MonoBehaviour
     {
-        [SerializeField] private bool _isPersistent = true;
+        protected virtual bool IsDontDestroyOnLoad { get; set; } = true;
 
         protected static bool IsQuitting { get; private set; }
 
         protected virtual void Awake()
         {
-            if (_isPersistent)
+            if (IsDontDestroyOnLoad)
             {
                 DontDestroyOnLoad(gameObject);
             }
@@ -30,10 +30,6 @@ namespace DarkNaku.Foundation
             IsQuitting = true;
             
             OnFireApplicationQuit();
-        }
-
-        protected virtual void OnInstantiate()
-        {
         }
 
         protected virtual void OnAwake()
@@ -80,8 +76,6 @@ namespace DarkNaku.Foundation
                         {
                             _instance = new GameObject($"[Singleton - {typeof(T)}]").AddComponent<T>();
                         }
-
-                        (_instance as SingletonBehaviour<T>).OnInstantiate();
                     }
 
                     return _instance;
@@ -107,7 +101,10 @@ namespace DarkNaku.Foundation
         
         protected sealed override void OnDestroy()
         {
-            base.OnDestroy();
+            if (_instance == this)
+            {
+                base.OnDestroy();
+            }
         }
 
         protected sealed override void OnApplicationQuit()
