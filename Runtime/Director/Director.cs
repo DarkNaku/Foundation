@@ -29,8 +29,13 @@ namespace DarkNaku.Director
             var currentScene = SceneManager.GetActiveScene();
             var currentSceneHandler = Instance.FindComponent<SceneHandler>(currentScene);
             var currentSceneTransition = Instance.FindComponent<ISceneTransition>(currentScene);
+            
             currentSceneHandler?.OnEnter();
-            Instance.StartCoroutine(currentSceneTransition.CoTransitionIn(null));
+
+            if (currentSceneTransition != null)
+            {
+                Instance.StartCoroutine(currentSceneTransition.CoTransitionIn(null));
+            }
         }
         
         public static void RegisterLoadingFromResource(string name, string path)
