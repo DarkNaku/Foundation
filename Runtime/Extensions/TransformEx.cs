@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
-namespace DarkNaku.Foundation.Extension
+namespace DarkNaku.Foundation
 {
     /// <summary>
     /// Transform의 확장 메서드

@@ -6,7 +6,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using DarkNaku.Foundation;
-using DarkNaku.Foundation.Extension;
 using UnityEngine.UI;
 
 namespace DarkNaku.Popup
