@@ -33,8 +33,6 @@ namespace DarkNaku.Attribute
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            //Debug.Log(fieldInfo.Name);
-            
             if (EditorApplication.isPlaying)
             {
                 EditorGUI.PropertyField(position, property, label, true);
@@ -47,14 +45,6 @@ namespace DarkNaku.Attribute
                 return;
             }
             
-            /*
-            var fieldType = fieldInfo.FieldType;
-            
-            if (property.objectReferenceValue == null ||
-                property.objectReferenceValue.GetType().IsSubclassOf(fieldType) == false)
-            {
-            }
-            */
             UpdateObjectReferenceValue(property);
             
             EditorGUI.PropertyField(position, property, label, true);
@@ -71,14 +61,14 @@ namespace DarkNaku.Attribute
         {
             if (Attribute.Name == null)
             {
-                if (goName.Equals(FieldName) == false) return false;
+                if (RefineName(goName).Equals(FieldName)) return true;
             }
             else
             {
-                if (goName.Equals(Attribute.Name) == false) return false;
+                if (goName.Equals(Attribute.Name)) return true;
             }
 
-            return true;
+            return false;
         }
     }
 }

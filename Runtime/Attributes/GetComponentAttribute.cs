@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Codice.CM.SEIDInfo;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace DarkNaku.Attribute
@@ -20,7 +16,7 @@ namespace DarkNaku.Attribute
     
     public class GetComponentAttribute : GetComponentBaseAttribute
     {
-        public GetComponentAttribute(string name = null) : base(name)
+        public GetComponentAttribute() : base(null)
         {
         }
     }
@@ -49,6 +45,13 @@ namespace DarkNaku.Attribute
     public class FindComponentAttribute : GetComponentBaseAttribute
     {
         public FindComponentAttribute(string name = null) : base(name)
+        {
+        }
+    }
+
+    public class FindComponentsAttribute : GetComponentBaseAttribute
+    {
+        public FindComponentsAttribute(string name = null) : base(name)
         {
         }
     }
