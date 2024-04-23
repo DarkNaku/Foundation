@@ -1,9 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
-using DarkNaku.Foundation;
 
 namespace DarkNaku.Attribute
 {
@@ -147,21 +145,10 @@ namespace DarkNaku.Attribute
     {
         protected override void UpdateObjectReferenceValue(SerializedProperty property)
         {
-            Component foundComponent = null;
             var fieldType = fieldInfo.FieldType;
             var target = property.serializedObject.targetObject as Component;
-            
-            target.transform.ForEachChild((child) =>
-            {
-                var component = child.GetComponent(fieldType);
-
-                if (component == null) return true;
-                if (!IsEqualFieldName(component.name)) return true;
-                
-                foundComponent = component;
-                
-                return false;
-            }, true);
+            var foundComponent = GetComponentsInChild(target.transform, fieldType)
+                .FirstOrDefault(component => IsEqualFieldName(component.name));
 
             property.objectReferenceValue = foundComponent;
         }
