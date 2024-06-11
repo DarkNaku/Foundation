@@ -17,14 +17,9 @@ Foundation
 -
 RPG 케릭터에서 사용하는 능력치 관리 시스템
 
-[Toast](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Toast)
--
-토스트 팝업 UI
-
 [Singleton](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Singleton)
 -
 MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
-
 
 [Attributes](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Attributes)
 -
