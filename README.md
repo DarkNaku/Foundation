@@ -17,10 +17,6 @@ Foundation
 -
 MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
 
-[Attributes](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Attributes)
--
-어트리뷰트 모음
-
 [Extensions](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Extensions)
 -
 기본 클래스들의 확장 함수 모음
