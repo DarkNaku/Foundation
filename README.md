@@ -13,10 +13,6 @@ Foundation
 -
 팝업 관리 시스템
 
-[Stat](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Stat)
--
-RPG 케릭터에서 사용하는 능력치 관리 시스템
-
 [Singleton](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Singleton)
 -
 MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
@@ -28,7 +24,6 @@ MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
 [Extensions](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Extensions)
 -
 기본 클래스들의 확장 함수 모음
-
 
 [Messenger](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Messenger)
 -
