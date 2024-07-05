@@ -1,23 +1,24 @@
+using System.Collections;
 using System.Collections.Generic;
 using DarkNaku.Foundation;
 using UnityEngine;
 using UnityEngine.Pool;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace DarkNaku.GOPool
 {
-    public class GOPool : SingletonScriptable<GOPool>
+    public class GOPool : SingletonBehaviour<GOPool>
     {
-        [SerializeField] private List<GOPoolData> _items = new();
+        private Dictionary<string, GOPoolData> _moldTable = new Dictionary<string, GOPoolData>();
 
-        private Dictionary<string, GOPoolData> _moldTable;
-
-        public static void Register(GOPoolData data)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void OnSubsystemRegistration()
         {
-            Instance._Register(data);
+            _instance = null;
+        }
+
+        public static void Register(string key, GameObject prefab)
+        {
+            Instance._Register(key, prefab);
         }
 
         public static void Unregister(string key)
@@ -30,9 +31,9 @@ namespace DarkNaku.GOPool
             return Instance._Get(key, parent).GO;
         }
         
-        public static T Get<T>(string key, Transform parent = null) where T : IGOPoolItem
+        public static U Get<U>(string key, Transform parent = null) where U : IGOPoolItem
         {
-            return Instance._Get<T>(key, parent);
+            return Instance._Get<U>(key, parent);
         }
         
         public static void Release(GameObject item)
@@ -44,27 +45,38 @@ namespace DarkNaku.GOPool
         {
             Instance._Release(item);
         }
-        
-        protected override void OnInitialize()
-        {
-            _moldTable = new();
 
-            for (int i = 0; i < _items.Count; i++)
+        private void _RegisterBuiltIn(params string[] paths)
+        {
+            for (int i = 0; i < paths.Length; i++)
             {
-                _Register(_items[i]);
+                var prefab = Resources.Load<GameObject>(paths[i]);
+
+                if (prefab == null)
+                {
+                    Debug.LogError($"[GOPool] RegisterBuiltIn : Prefab is null. Path = {paths[i]}");
+                    continue;
+                }
+
+                //var key = (T) (object) paths[i];
+                
+                _Register(paths[i], prefab);
             }
         }
 
-        private void _Register(GOPoolData data)
+        private void _Register(string key, GameObject prefab)
         {
-            if (data.Prefab == null) return;
+            if (prefab == null)
+            {
+                Debug.LogError($"[GOPool] Register : Prefab is null.");
+                return;
+            }
 
-            var prefab = data.Prefab;
-
-            data.Pool = new ObjectPool<IGOPoolItem>(
+            var pool = new ObjectPool<IGOPoolItem>(
                 () =>
                 {
                     var go = Instantiate(prefab);
+                    
                     var item = go.GetComponent<IGOPoolItem>();
 
                     if (item == null)
@@ -78,23 +90,17 @@ namespace DarkNaku.GOPool
                 OnReleaseItem,
                 OnDestroyItem);
 
-            if (string.IsNullOrEmpty(data.Key))
-            {
-                _moldTable.TryAdd(data.Prefab.name, data);
-            }
-            else
-            {
-                _moldTable.TryAdd(data.Key, data);
-            }
+            var data = new GOPoolData(key, pool);
+
+            _moldTable.TryAdd(key, data);
         }
 
         private void _Unregister(string key)
         {
             if (_moldTable.ContainsKey(key))
             {
-                Destroy(_moldTable[key].Prefab);
-
                 _moldTable.Remove(key);
+                // 사용중인건? 모두 제거 해야함
             }
         }
 
@@ -145,13 +151,5 @@ namespace DarkNaku.GOPool
         {
             item.OnDestroyItem();
         }
-        
-#if UNITY_EDITOR
-        [MenuItem("Tools/GOPool")]
-        private static void SelectGOPool()
-        {
-            Selection.activeObject = Instance;
-        }
-#endif
     }
 }
