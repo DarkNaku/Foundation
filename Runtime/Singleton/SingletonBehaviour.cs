@@ -4,31 +4,20 @@ namespace DarkNaku.Foundation
 {
     public abstract class SingletonBehaviour : MonoBehaviour
     {
-        protected virtual bool IsDontDestroyOnLoad { get; set; } = true;
-
-        protected static bool IsQuitting { get; private set; }
-
         protected virtual void Awake()
         {
-            if (IsDontDestroyOnLoad)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
+            DontDestroyOnLoad(gameObject);
 
             OnAwake();
         }
 
         protected virtual void OnDestroy()
         {
-            IsQuitting = true;
-            
             OnFireDestroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
-            IsQuitting = true;
-            
             OnFireApplicationQuit();
         }
 
@@ -50,11 +39,14 @@ namespace DarkNaku.Foundation
         private static readonly object _lock = new();
         protected static T _instance;
 
+        private static bool _isQuitting;
+        private static bool _isDestroyed;
+
         public static T Instance
         {
             get
             {
-                if (IsQuitting) return null;
+                if (_isDestroyed) return null;
 
                 lock (_lock)
                 {
@@ -103,13 +95,24 @@ namespace DarkNaku.Foundation
         {
             if (_instance == this)
             {
+                if (_isQuitting)
+                {
+                    _instance = null;
+                    _isDestroyed = true;
+                }
+                
                 base.OnDestroy();
             }
         }
 
         protected sealed override void OnApplicationQuit()
         {
-            base.OnApplicationQuit();
+            if (_instance == this)
+            {
+                _isQuitting = true;
+                
+                base.OnApplicationQuit();
+            }
         }
     }
 }
