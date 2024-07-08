@@ -5,10 +5,6 @@ Foundation
 -
 다양한 관리자들의 초기화 및 접근을 용이하게 해주는 클래스
 
-[GOPool](https://github.com/DarkNaku/Foundation/tree/main/Runtime/GOPool)
--
-게임 오브젝트 풀 관리 시스템
-
 [Popup](https://github.com/DarkNaku/Foundation/tree/main/Runtime/Popup)
 -
 팝업 관리 시스템
