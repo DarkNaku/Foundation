@@ -3,159 +3,50 @@ using System.Collections.Generic;
 
 namespace DarkNaku.Messenger
 {
-    public static class Messenger<T>
+    public static class Messenger
     {
-        private static readonly Dictionary<T, Delegate> _eventTable = MessengerInternal<T>.EventTable;
-
-        public static void AddListener(T eventType, OnBroadcast handler)
+        public static void AddListener<T>(Action<T> listener) where T : struct
         {
-            MessengerInternal<T>.AddListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast)_eventTable[eventType] + handler;
+            MessengerInternal<T>.AddListener(listener);
         }
-
-        public static void RemoveListener(T eventType, OnBroadcast handler)
+        
+        public static void RemoveListener<T>(Action<T> listener) where T : struct
         {
-            MessengerInternal<T>.RemoveListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast)_eventTable[eventType] - handler;
-            MessengerInternal<T>.OnRemoveListener(eventType);
+            MessengerInternal<T>.RemoveListener(listener);
         }
-
-        public static void Broadcast(T eventType)
+        
+        public static void Clear<T>() where T : struct
         {
-            Broadcast(eventType, MessengerInternal<T>.DEFAULT_MODE);
+            MessengerInternal<T>.Clear();
         }
-
-        private static void Broadcast(T eventType, MessengerMode mode)
+        
+        public static void Broadcast<T>(T @event) where T : struct
         {
-            MessengerInternal<T>.OnBroadcasting(eventType, mode);
-
-            if (_eventTable.TryGetValue(eventType, out var d))
+            MessengerInternal<T>.Broadcast(@event);
+        }
+        
+        internal static class MessengerInternal<T> where T : struct
+        {
+            private static Action<T> _listeners = _ => { };
+        
+            public static void AddListener(Action<T> listener)
             {
-                if (d is OnBroadcast callback)
-                {
-                    callback();
-                }
-                else
-                {
-                    throw MessengerInternal<T>.CreateBroadcastSignatureException(eventType);
-                }
+                _listeners += listener;
             }
-        }
-    }
-
-    public static class Messenger<T, U0>
-    {
-        private static readonly Dictionary<T, Delegate> _eventTable = MessengerInternal<T>.EventTable;
-
-        public static void AddListener(T eventType, OnBroadcast<U0> handler)
-        {
-            MessengerInternal<T>.AddListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast<U0>)_eventTable[eventType] + handler;
-        }
-
-        public static void RemoveListener(T eventType, OnBroadcast<U0> handler)
-        {
-            MessengerInternal<T>.RemoveListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast<U0>)_eventTable[eventType] - handler;
-            MessengerInternal<T>.OnRemoveListener(eventType);
-        }
-
-        public static void Broadcast(T eventType, U0 param0)
-        {
-            Broadcast(eventType, param0, MessengerInternal<T>.DEFAULT_MODE);
-        }
-
-        private static void Broadcast(T eventType, U0 param0, MessengerMode mode)
-        {
-            MessengerInternal<T>.OnBroadcasting(eventType, mode);
-
-            if (!_eventTable.TryGetValue(eventType, out var d)) return;
-
-            if (d is OnBroadcast<U0> callback)
+        
+            public static void RemoveListener(Action<T> listener)
             {
-                callback(param0);
+                _listeners -= listener;
             }
-            else
+
+            public static void Clear()
             {
-                throw MessengerInternal<T>.CreateBroadcastSignatureException(eventType);
+                _listeners = _ => { };
             }
-        }
-    }
-
-    public static class Messenger<T, U0, U1>
-    {
-        private static readonly Dictionary<T, Delegate> _eventTable = MessengerInternal<T>.EventTable;
-
-        public static void AddListener(T eventType, OnBroadcast<U0, U1> handler)
-        {
-            MessengerInternal<T>.AddListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast<U0, U1>)_eventTable[eventType] + handler;
-        }
-
-        public static void RemoveListener(T eventType, OnBroadcast<U0, U1> handler)
-        {
-            MessengerInternal<T>.RemoveListener(eventType, handler);
-            _eventTable[eventType] = (OnBroadcast<U0, U1>)_eventTable[eventType] - handler;
-            MessengerInternal<T>.OnRemoveListener(eventType);
-        }
-
-        public static void Broadcast(T eventType, U0 param0, U1 param1)
-        {
-            Broadcast(eventType, param0, param1, MessengerInternal<T>.DEFAULT_MODE);
-        }
-
-        private static void Broadcast(T eventType, U0 param0, U1 param1, MessengerMode mode)
-        {
-            MessengerInternal<T>.OnBroadcasting(eventType, mode);
-
-            if (!_eventTable.TryGetValue(eventType, out var d)) return;
-
-            if (d is OnBroadcast<U0, U1> callback)
+        
+            public static void Broadcast(T @event)
             {
-                callback(param0, param1);
-            }
-            else
-            {
-                throw MessengerInternal<T>.CreateBroadcastSignatureException(eventType);
-            }
-        }
-    }
-
-    public static class Messenger<T, U0, U1, U2>
-    {
-        private static Dictionary<T, Delegate> eventTable = MessengerInternal<T>.EventTable;
-
-        public static void AddListener(T eventType, OnBroadcast<U0, U1, U2> handler)
-        {
-            MessengerInternal<T>.AddListener(eventType, handler);
-            eventTable[eventType] = (OnBroadcast<U0, U1, U2>)eventTable[eventType] + handler;
-        }
-
-        public static void RemoveListener(T eventType, OnBroadcast<U0, U1, U2> handler)
-        {
-            MessengerInternal<T>.RemoveListener(eventType, handler);
-            eventTable[eventType] = (OnBroadcast<U0, U1, U2>)eventTable[eventType] - handler;
-            MessengerInternal<T>.OnRemoveListener(eventType);
-        }
-
-        public static void Broadcast(T eventType, U0 param0, U1 param1, U2 param2)
-        {
-            Broadcast(eventType, param0, param1, param2, MessengerInternal<T>.DEFAULT_MODE);
-        }
-
-        private static void Broadcast(T eventType, U0 param0, U1 param1, U2 param2, MessengerMode mode)
-        {
-            MessengerInternal<T>.OnBroadcasting(eventType, mode);
-
-            if (!eventTable.TryGetValue(eventType, out var d)) return;
-
-            if (d is OnBroadcast<U0, U1, U2> callback)
-            {
-                callback(param0, param1, param2);
-            }
-            else
-            {
-                throw MessengerInternal<T>.CreateBroadcastSignatureException(eventType);
+                _listeners.Invoke(@event);
             }
         }
     }
