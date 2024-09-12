@@ -2,24 +2,28 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Codice.CM.Common;
 using UnityEngine;
 
 namespace DarkNaku.Foundation
 {
-    public abstract class Manager : MonoBehaviour
+    public abstract class Manager : MonoBehaviour, IDisposable
     {
         public bool Initialized { get; private set; }
 
         private bool _isInitializing;
-        private HashSet<Manager> _managers;
+        private Manager _parent;
+        private HashSet<Manager> _managers = new();
 
         public virtual void Initialize(Manager parent = null)
         {
             if (Initialized) return;
 
             _isInitializing = true;
+
+            _parent = parent;
             
-            FindAllManagerInChildren();
+            if (_parent == null) FindManagers();
 
             foreach (var manager in _managers)
             {
@@ -52,7 +56,9 @@ namespace DarkNaku.Foundation
 
             _isInitializing = true;
             
-            FindAllManagerInChildren();
+            _parent = parent;
+
+            if (_parent == null) FindManagers();
 
             foreach (var manager in _managers)
             {
@@ -79,21 +85,21 @@ namespace DarkNaku.Foundation
             }
         }
 
-        public virtual void Uninitialize()
+        public virtual void Dispose()
         {
             if (Initialized == false) return;
 
             foreach (var manager in _managers)
             {
-                manager.Uninitialize();
+                manager.Dispose();
             }
 
-            OnUninitialize();
+            OnDispose();
 
             Initialized = false;
         }
 
-        public T Get<T>() where T : class
+        public T Get<T>() where T : Manager
         {
             if (_isInitializing)
             {
@@ -108,14 +114,21 @@ namespace DarkNaku.Foundation
             }
             else
             {
-                foreach (var manager in _managers)
+                if (_parent == null)
                 {
-                    var found = manager.Get<T>();
-
-                    if (found != null)
+                    foreach (var manager in _managers)
                     {
-                        return found;
+                        var found = manager.Get<T>();
+
+                        if (found != null)
+                        {
+                            return found;
+                        }
                     }
+                }
+                else
+                {
+                    return _parent.Get<T>();
                 }
             }
 
@@ -140,29 +153,31 @@ namespace DarkNaku.Foundation
             await Task.Delay(0);
         }
 
-        protected virtual void OnUninitialize()
+        protected virtual void OnDispose()
         {
         }
         
-        private void FindAllManagerInChildren()
+        private void FindManagers()
         {
-            _managers = new();
-            
-            transform.ForEachChild((child) =>
+            transform.ForEachChildIncludeSelf((tf) =>
             {
-                var manager = child.GetComponent<Manager>();
+                var managers = tf.GetComponents<Manager>();
 
-                if (manager == null) return;
-                if (_managers.Contains(manager)) return;
-                
-                manager.FindAllManagerInChildren();
-                
-                _managers.Add(manager);
-            });
+                foreach (var manager in managers)
+                {
+                    if (manager == null) continue;
+                    if (manager == this) continue;
+                    if (_managers.Contains(manager)) continue;
+
+                    _managers.Add(manager);
+                }
+            }, true);
         }
     }
     
-    public abstract class Manager<T> : Manager where T : class
+    // 주의 : 도메인 리로드 꺼놓은 경우 _instance 변수 초기화가 되지 않기 때문에 상속 받은 클래스에서 아래 이벤트로 초기화를 해주어야 합니다.
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public abstract class Manager<T> : Manager where T : Manager<T> 
     {
         public static T Instance => _instance;
         
@@ -178,7 +193,9 @@ namespace DarkNaku.Foundation
             }
             else if (_instance.Equals(this) == false)
             {
-                Destroy(gameObject);
+                Destroy(this);
+                Debug.LogErrorFormat("[Mangaer] Initialize : {0} has been registered multiple times.", GetType());
+                return;
             }
             
             base.Initialize(parent);
@@ -194,15 +211,17 @@ namespace DarkNaku.Foundation
             }
             else if (_instance.Equals(this) == false)
             {
-                Destroy(gameObject);
+                Destroy(this);
+                Debug.LogErrorFormat("[Mangaer] InitializeAsync : {0} has been registered multiple times.", GetType());
+                return;
             }
             
             await base.InitializeAsync(parent);
         }
 
-        public sealed override void Uninitialize()
+        public sealed override void Dispose()
         {
-            base.Uninitialize();
+            base.Dispose();
 
             _instance = null;
         }
