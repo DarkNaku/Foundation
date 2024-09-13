@@ -38,3 +38,8 @@ public class MasterManager : Manager // 또는 Manager<MasterManager>
     }
 }
 ```
+
+### 기능
+* 자신을 포함한 하위 Manager의 그룹 관리
+* 개별 초기화 시점과 그룹의 모든 Manager가 초기화 되는 시점 구분 이벤트
+* Manager에서 그룹내 다른 Manager 접근 가능
