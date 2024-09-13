@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Codice.CM.Common;
 using UnityEngine;
 
 namespace DarkNaku.Foundation
@@ -15,10 +14,10 @@ namespace DarkNaku.Foundation
         private Manager _parent;
         private HashSet<Manager> _managers = new();
 
-        public virtual void Initialize(Manager parent = null)
+        public void Initialize(Manager parent = null)
         {
             if (Initialized) return;
-
+            
             _isInitializing = true;
 
             _parent = parent;
@@ -50,10 +49,10 @@ namespace DarkNaku.Foundation
             }
         }
         
-        public virtual async Task InitializeAsync(Manager parent = null)
+        public async Task InitializeAsync(Manager parent = null)
         {
             if (Initialized) return;
-
+            
             _isInitializing = true;
             
             _parent = parent;
@@ -85,7 +84,7 @@ namespace DarkNaku.Foundation
             }
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
             if (Initialized == false) return;
 
@@ -134,7 +133,7 @@ namespace DarkNaku.Foundation
 
             return null;
         }
-
+        
         protected virtual void OnInitialize()
         {
         }
@@ -156,7 +155,15 @@ namespace DarkNaku.Foundation
         protected virtual void OnDispose()
         {
         }
+
+        protected virtual void Awake()
+        {
+        }
         
+        protected virtual void OnDestroy()
+        {
+        }
+
         private void FindManagers()
         {
             transform.ForEachChildIncludeSelf((tf) =>
@@ -183,10 +190,8 @@ namespace DarkNaku.Foundation
         
         private static T _instance;
 
-        public sealed override void Initialize(Manager parent = null)
+        protected sealed override void Awake()
         {
-            if (Initialized) return;
-
             if (_instance == null)
             {
                 _instance = this as T;
@@ -195,35 +200,24 @@ namespace DarkNaku.Foundation
             {
                 Destroy(this);
                 Debug.LogErrorFormat("[Mangaer] Initialize : {0} has been registered multiple times.", GetType());
-                return;
             }
             
-            base.Initialize(parent);
+            OnAwake();
         }
 
-        public sealed override async Task InitializeAsync(Manager parent = null)
+        protected sealed override void OnDestroy()
         {
-            if (Initialized) return;
-
-            if (_instance == null)
-            {
-                _instance = this as T;
-            }
-            else if (_instance.Equals(this) == false)
-            {
-                Destroy(this);
-                Debug.LogErrorFormat("[Mangaer] InitializeAsync : {0} has been registered multiple times.", GetType());
-                return;
-            }
-            
-            await base.InitializeAsync(parent);
-        }
-
-        public sealed override void Dispose()
-        {
-            base.Dispose();
-
             _instance = null;
+            
+            OnFireDestroy();
+        }
+
+        protected virtual void OnAwake()
+        {
+        }
+        
+        protected virtual void OnFireDestroy()
+        {
         }
     }
 }
