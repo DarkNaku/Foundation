@@ -7,6 +7,6 @@
   "description": "DarkNaku's Game Foundation Package",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DarkNaku/Foundation.git"
+    "url": "git+https://github.com/DarkNaku/Foundation.git?path=/Assets/Foundation"
   }
 }
