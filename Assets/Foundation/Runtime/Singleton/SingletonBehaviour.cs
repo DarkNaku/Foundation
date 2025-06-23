@@ -42,30 +42,24 @@ namespace DarkNaku.Foundation
         private static bool _isQuitting;
         private static bool _isDestroyed;
 
-        public static T Instance
-        {
-            get
-            {
-                if (_isDestroyed) return null;
-
-                lock (_lock)
-                {
-                    if (_instance == null)
-                    {
+        public static T Instance {
+            get {
+                lock (_lock) {
+                    if (_isDestroyed || _instance == null) {
                         var instances = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-                        if (instances.Length > 0)
-                        {
+                        if (instances.Length > 0) {
+                            _isDestroyed = false;
+                            _isQuitting = false;
                             _instance = instances[0];
 
-                            for (int i = 1; i < instances.Length; i++)
-                            {
+                            for (int i = 1; i < instances.Length; i++) {
                                 Debug.LogWarningFormat("[SingletonBehaviour] Instance Duplicated - {0}", instances[i].name);
                                 Destroy(instances[i]);
                             }
-                        }
-                        else
-                        {
+                        } else {
+                            if (_isDestroyed) return null;
+
                             _instance = new GameObject($"[Singleton - {typeof(T)}]").AddComponent<T>();
                         }
                     }
