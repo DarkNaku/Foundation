@@ -16,18 +16,18 @@
 -
 MonoBehaviour를 상속받는 단순한 FSM(Finite State Machine)
 
-[Singleton](https://github.com/DarkNaku/Foundation/Atree/main/ssets/Foundation/Runtime/Singleton)
+[Singleton](https://github.com/DarkNaku/Foundation/Atree/main/Assets/Foundation/Runtime/Singleton)
 -
 MonoBehaviour, ScriptableObject, class 기반 싱글톤 제네릭 클래스
 
-[Extensions](https://github.com/DarkNaku/Foundation/Atree/main/ssets/Foundation/Runtime/Extensions)
+[Extensions](https://github.com/DarkNaku/Foundation/Atree/main/Assets/Foundation/Runtime/Extensions)
 -
 기본 클래스들의 확장 함수 모음
 
-[Messenger](https://github.com/DarkNaku/Foundation/Atree/main/ssets/Foundation/Runtime/Messenger)
+[Messenger](https://github.com/DarkNaku/Foundation/Atree/main/Assets/Foundation/Runtime/Messenger)
 -
 이벤트 보내고 받는 용도의 시스템
 
-[Utilities](https://github.com/DarkNaku/Foundation/Atree/main/ssets/Foundation/Runtime/Utilities)
+[Utilities](https://github.com/DarkNaku/Foundation/Atree/main/Assets/Foundation/Runtime/Utilities)
 -
 기타 유틸리티 코드 모음
