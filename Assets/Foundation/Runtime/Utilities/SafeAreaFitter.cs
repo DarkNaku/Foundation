@@ -1,14 +1,16 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaFitter : MonoBehaviour {
-    [SerializeField] private RectTransform rectTransform;
+    [SerializeField] private RectTransform _rectTransform;
 
-    private Rect prevSafeArea;
+    private Rect _prevSafeArea;
+    private Vector3[] _corners = new Vector3[4];
 
     private void OnValidate() {
-        rectTransform ??= GetComponent<RectTransform>();
+        _rectTransform ??= GetComponent<RectTransform>();
     }
 
     private void LateUpdate() {
@@ -16,7 +18,8 @@ public class SafeAreaFitter : MonoBehaviour {
     }
 
     public void FitToSafeArea() {
-        if (rectTransform == null) return;
+        if (_rectTransform == null) return;
+        if (Screen.safeArea == _prevSafeArea) return;
 
         Rect safeArea = Screen.safeArea;
 
@@ -28,9 +31,9 @@ public class SafeAreaFitter : MonoBehaviour {
         anchorMax.x /= Screen.width;
         anchorMax.y /= Screen.height;
 
-        rectTransform.anchorMin = anchorMin;
-        rectTransform.anchorMax = anchorMax;
+        _rectTransform.anchorMin = anchorMin;
+        _rectTransform.anchorMax = anchorMax;
 
-        prevSafeArea = safeArea;
+        _prevSafeArea = safeArea;
     }
 }
