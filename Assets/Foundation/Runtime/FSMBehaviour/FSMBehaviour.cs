@@ -12,15 +12,15 @@ namespace DarkNaku.Foundation {
 
         public bool IsRunning { get; private set; }
 
-        public void Run(S state) {
+        public void StartFSM(S state) {
             if (IsRunning) return;
 
             State = state;
 
-            Run();
+            StartFSM();
         }
 
-        public void Run() {
+        public void StartFSM() {
             if (IsRunning) return;
 
             IsRunning = true;
@@ -28,19 +28,19 @@ namespace DarkNaku.Foundation {
             _states[State].OnEnter();
         }
 
-        public void Pause() {
+        public void PauseFSM() {
             if (IsRunning == false) return;
 
             IsRunning = false;
         }
 
-        public void Resume() {
+        public void ResumeFSM() {
             if (IsRunning) return;
 
             IsRunning = true;
         }
 
-        public void Stop() {
+        public void StopFSM() {
             if (IsRunning == false) return;
 
             _states[State].OnExit();
@@ -48,7 +48,7 @@ namespace DarkNaku.Foundation {
             IsRunning = false;
         }
 
-        public void Change(S state) {
+        public void ChangeState(S state) {
             if (EqualityComparer<S>.Default.Equals(state, State)) return;
 
             _states[State].OnExit();
@@ -83,6 +83,19 @@ namespace DarkNaku.Foundation {
         }
 
         protected void RemoveState(S state) => _states.Remove(state);
+        
+        private void AddState(FSMState<S, M> state) {
+            if (state == null) return;
+            if (_states.ContainsKey(state.State)) return;
+
+            if (_states.TryAdd(state.State, state)) {
+                if (_states.Count == 1) {
+                    State = state.State;
+                }
+
+                state.Initialize(this as M);
+            }
+        }
 
         private void FixedUpdate() {
             if (IsRunning) {
@@ -151,19 +164,6 @@ namespace DarkNaku.Foundation {
             if (IsRunning) {
                 _states[State].OnMouseUpAsButton();
                 EventOnMouseUpAsButton();
-            }
-        }
-
-        private void AddState(FSMState<S, M> state) {
-            if (state == null) return;
-            if (_states.ContainsKey(state.State)) return;
-
-            if (_states.TryAdd(state.State, state)) {
-                if (_states.Count == 1) {
-                    State = state.State;
-                }
-
-                state.Initialize(this as M);
             }
         }
     }

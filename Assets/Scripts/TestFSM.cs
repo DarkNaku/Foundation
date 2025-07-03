@@ -6,7 +6,7 @@ using DarkNaku.Foundation;
 public class TestFSM : FSMBehaviour<string, TestFSM> {
     private void Awake() {
         AddStates(new IdleState(), new ChaseState());
-        Run("Idle");
+        StartFSM("Idle");
     }
 
     public class IdleState : FSMState<string, TestFSM> {
@@ -22,7 +22,7 @@ public class TestFSM : FSMBehaviour<string, TestFSM> {
 
         public override void Update() {
             if (Time.time - _enterTime > 3f) {
-                FSM.Change("Chase");
+                FSM.ChangeState("Chase");
                 return;
             }
         }
@@ -45,7 +45,7 @@ public class TestFSM : FSMBehaviour<string, TestFSM> {
 
         public override void Update() {
             if (Time.time - _enterTime > 3f) {
-                FSM.Change("Idle");
+                FSM.ChangeState("Idle");
                 return;
             }
         }
