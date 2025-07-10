@@ -1,37 +1,32 @@
 using UnityEngine;
+using System;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace DarkNaku.Foundation
-{
-    public abstract class SingletonScriptable<T> : ScriptableObject where T : ScriptableObject
-    {
+namespace DarkNaku.Foundation {
+    public abstract class SingletonScriptable<T> : ScriptableObject, IDisposable where T : ScriptableObject {
         protected virtual string AssetPath { get; } = RESOURCES_PATH;
-        
+
         private const string RESOURCES_PATH = "Resources";
 
         private static T _instance;
-        public static T Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
+        public static T Instance {
+            get {
+                if (_instance == null) {
                     var assetName = typeof(T).Name;
 
                     _instance = Resources.Load(assetName) as T;
 
-                    if (_instance == null)
-                    {
+                    if (_instance == null) {
                         _instance = CreateInstance<T>();
 
 #if UNITY_EDITOR
                         var assetPath = (_instance as SingletonScriptable<T>).AssetPath;
                         var resourcePath = System.IO.Path.Combine(Application.dataPath, assetPath);
 
-                        if (System.IO.Directory.Exists(resourcePath) == false)
-                        {
+                        if (System.IO.Directory.Exists(resourcePath) == false) {
                             AssetDatabase.CreateFolder("Assets", assetPath);
                         }
 
@@ -46,8 +41,11 @@ namespace DarkNaku.Foundation
             }
         }
 
-        protected virtual void OnInitialize()
-        {
+        protected virtual void OnInitialize() {
+        }
+
+        public void Dispose() {
+            _instance = null;
         }
     }
 }
