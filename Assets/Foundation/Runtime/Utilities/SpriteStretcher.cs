@@ -33,11 +33,19 @@ public class SpriteStretcher : MonoBehaviour {
         var scaleX = screenWidth / unitWidth;
         var scaleY = screenHeight / unitHeight;
 
-        if (maintainAspectRatio) {
-            var scale = Mathf.Max(scaleX, scaleY);
-            transform.localScale = new Vector3(scale, scale, 1F);
-        } else {
-            transform.localScale = new Vector3(scaleX, scaleY, 1F);
+		switch (spriteRenderer.drawMode) {
+            case SpriteDrawMode.Sliced:
+            case SpriteDrawMode.Tiled:
+                spriteRenderer.size = new Vector2(screenWidth, screenHeight);
+                break;
+            default:
+                if (maintainAspectRatio) {
+                    var scale = Mathf.Max(scaleX, scaleY);
+                    transform.localScale = new Vector3(scale, scale, 1F);
+                } else {
+                    transform.localScale = new Vector3(scaleX, scaleY, 1F);
+                }
+                break;
         }
 
         prevAspect = targetCamera.aspect;
