@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -140,13 +139,6 @@ namespace DarkNaku.Foundation {
         }
         
         protected virtual void OnFireDestroy() {
-        }
-    }
-
-    public class DefaultManager : Manager<DefaultManager> {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void OnSubsystemRegistration() {
-            _instance = null;
         }
     }
 }
