@@ -142,4 +142,11 @@ namespace DarkNaku.Foundation {
         protected virtual void OnFireDestroy() {
         }
     }
+
+    public class DefaultManager : Manager<DefaultManager> {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void OnSubsystemRegistration() {
+            _instance = null;
+        }
+    }
 }
